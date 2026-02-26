@@ -17,12 +17,12 @@ Deno.serve(async (req) => {
     // Get unique addresses with coordinates for upcoming jobs
     const { data: upcomingJobs } = await supabase
       .from("jobs")
-      .select("scheduled_date, service_addresses(lat, lng, zip)")
+      .select("id, scheduled_date, subscription_id, service_addresses(lat, lng, zip, street, city)")
       .eq("status", "scheduled")
       .gte("scheduled_date", new Date().toISOString().split("T")[0]);
 
     if (!upcomingJobs?.length) {
-      return new Response(JSON.stringify({ message: "No upcoming jobs", alerts: 0 }), {
+      return new Response(JSON.stringify({ message: "No upcoming jobs", alerts: 0, rescheduled: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -36,6 +36,7 @@ Deno.serve(async (req) => {
     });
 
     const alerts: any[] = [];
+    const severeAlertDates: Record<string, Set<string>> = {}; // date -> set of zips
 
     // Check weather for each unique location using Open-Meteo (free, no API key)
     for (const [zip, coords] of Object.entries(zipCoords)) {
@@ -51,21 +52,29 @@ Deno.serve(async (req) => {
             const precipProb = weather.daily.precipitation_probability_max[i];
             const wind = weather.daily.wind_speed_10m_max[i];
 
-            // Flag heavy rain (>10mm or >70% probability) or high wind (>30 mph / ~48 km/h)
             const isHeavyRain = precip > 10 || precipProb > 70;
             const isHighWind = wind > 48;
+            const isSevere = precip > 20 || wind > 64;
 
             if (isHeavyRain || isHighWind) {
               const parts: string[] = [];
               if (isHeavyRain) parts.push(`Heavy rain expected (${precip.toFixed(1)}mm, ${precipProb}% chance)`);
               if (isHighWind) parts.push(`High winds (${(wind * 0.621).toFixed(0)} mph)`);
 
+              const severity = isSevere ? "severe" : "warning";
+
               alerts.push({
                 alert_date: date,
-                severity: precip > 20 || wind > 64 ? "severe" : "warning",
+                severity,
                 description: parts.join(". "),
                 affected_zip: zip,
+                auto_reschedule: isSevere, // auto-reschedule severe weather
               });
+
+              if (isSevere) {
+                if (!severeAlertDates[date]) severeAlertDates[date] = new Set();
+                severeAlertDates[date].add(zip);
+              }
             }
           }
         }
@@ -74,9 +83,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Upsert alerts (avoid duplicates)
+    // Upsert alerts
     if (alerts.length > 0) {
-      // Delete existing alerts for these dates/zips to avoid duplicates
       const dates = [...new Set(alerts.map(a => a.alert_date))];
       await supabase
         .from("weather_alerts")
@@ -88,11 +96,80 @@ Deno.serve(async (req) => {
       if (error) console.error("Insert alerts error:", error);
     }
 
+    // AUTO-RESCHEDULE: Move jobs on severe weather dates to next available day
+    let rescheduled = 0;
+    const rescheduledDetails: any[] = [];
+
+    for (const [alertDate, affectedZips] of Object.entries(severeAlertDates)) {
+      const affectedJobs = upcomingJobs.filter((j: any) =>
+        j.scheduled_date === alertDate &&
+        j.service_addresses?.zip &&
+        affectedZips.has(j.service_addresses.zip)
+      );
+
+      for (const job of affectedJobs) {
+        // Find next clear day (try +1, +2, +3 days)
+        const originalDate = new Date(alertDate + "T12:00:00");
+        let newDate: string | null = null;
+
+        for (let offset = 1; offset <= 3; offset++) {
+          const candidate = new Date(originalDate);
+          candidate.setDate(candidate.getDate() + offset);
+          const candidateStr = candidate.toISOString().split("T")[0];
+          
+          // Check if this date also has severe weather
+          if (!severeAlertDates[candidateStr]?.has(job.service_addresses.zip)) {
+            newDate = candidateStr;
+            break;
+          }
+        }
+
+        if (newDate) {
+          const { error } = await supabase
+            .from("jobs")
+            .update({
+              scheduled_date: newDate,
+              notes: `Auto-rescheduled from ${alertDate} due to severe weather`,
+            })
+            .eq("id", job.id);
+
+          if (!error) {
+            rescheduled++;
+            rescheduledDetails.push({
+              job_id: job.id,
+              from: alertDate,
+              to: newDate,
+              zip: job.service_addresses.zip,
+            });
+
+            // Notify customer
+            const { data: sub } = await supabase
+              .from("subscriptions")
+              .select("customer_id")
+              .eq("id", job.subscription_id)
+              .single();
+
+            if (sub) {
+              await supabase.from("notifications").insert({
+                user_id: sub.customer_id,
+                type: "weather_reschedule",
+                title: "Visit Rescheduled — Weather",
+                body: `Your visit at ${job.service_addresses.street} on ${alertDate} has been moved to ${newDate} due to severe weather.`,
+                channel: "sms",
+                metadata: { job_id: job.id, original_date: alertDate, new_date: newDate },
+              });
+            }
+          }
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({
-        message: `Weather check complete. ${alerts.length} alerts created.`,
+        message: `Weather check complete. ${alerts.length} alerts, ${rescheduled} jobs auto-rescheduled.`,
         alerts: alerts.length,
-        details: alerts,
+        rescheduled,
+        rescheduledDetails,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
