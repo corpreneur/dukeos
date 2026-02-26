@@ -20,11 +20,26 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useState } from "react";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
+const CANCEL_REASONS = [
+  "Too expensive",
+  "Moving away",
+  "Switching providers",
+  "Not satisfied with service",
+  "No longer need service",
+  "Other",
+];
 
 const SubscriptionsTab = () => {
   const { user } = useAuth();
   const { profile } = useProfile();
   const queryClient = useQueryClient();
+  const [cancelReason, setCancelReason] = useState("");
+  const [cancelNote, setCancelNote] = useState("");
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ["customer-subscriptions", user?.id],
@@ -40,15 +55,21 @@ const SubscriptionsTab = () => {
   });
 
   const cancelSub = useMutation({
-    mutationFn: async (subId: string) => {
+    mutationFn: async ({ subId, reason }: { subId: string; reason: string }) => {
       const { error } = await supabase
         .from("subscriptions")
-        .update({ active: false, cancelled_at: new Date().toISOString() })
+        .update({
+          active: false,
+          cancelled_at: new Date().toISOString(),
+          cancellation_reason: reason,
+        } as any)
         .eq("id", subId);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["customer-subscriptions"] });
+      setCancelReason("");
+      setCancelNote("");
       toast.success("Subscription cancelled");
     },
     onError: (err: any) => toast.error(err.message),
@@ -113,7 +134,7 @@ const SubscriptionsTab = () => {
               )}
               <div className="pt-2 border-t border-border flex items-center gap-2">
                 {sub.active && (
-                  <AlertDialog>
+                  <AlertDialog onOpenChange={(open) => { if (!open) { setCancelReason(""); setCancelNote(""); } }}>
                     <AlertDialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
                         <XCircle className="h-3.5 w-3.5" /> Cancel
@@ -123,13 +144,36 @@ const SubscriptionsTab = () => {
                       <AlertDialogHeader>
                         <AlertDialogTitle className="font-display">Cancel Subscription?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          This will cancel your {sub.plan} plan ({sub.frequency} service). You won't be charged again, and any remaining scheduled jobs will be kept.
+                          We're sorry to see you go. Please let us know why you're cancelling your {sub.plan} plan.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
+                      <div className="space-y-4 py-2">
+                        <RadioGroup value={cancelReason} onValueChange={setCancelReason}>
+                          {CANCEL_REASONS.map((reason) => (
+                            <div key={reason} className="flex items-center space-x-2">
+                              <RadioGroupItem value={reason} id={`reason-${reason}`} />
+                              <Label htmlFor={`reason-${reason}`} className="text-sm cursor-pointer">{reason}</Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                        {cancelReason === "Other" && (
+                          <Textarea
+                            placeholder="Tell us more..."
+                            value={cancelNote}
+                            onChange={(e) => setCancelNote(e.target.value)}
+                            className="resize-none"
+                            rows={2}
+                          />
+                        )}
+                      </div>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Keep Plan</AlertDialogCancel>
                         <AlertDialogAction
-                          onClick={() => cancelSub.mutate(sub.id)}
+                          disabled={!cancelReason}
+                          onClick={() => cancelSub.mutate({
+                            subId: sub.id,
+                            reason: cancelReason === "Other" ? `Other: ${cancelNote}` : cancelReason,
+                          })}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
                           Yes, Cancel

@@ -46,6 +46,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { ReleaseTracker } from "@/components/layout/ReleaseTracker";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const adminNav = [
   { title: "Overview", url: "/dashboard", icon: Briefcase, end: true },
@@ -187,6 +188,9 @@ const OSLayout = () => {
             <SidebarTrigger />
             <div className="h-5 w-px bg-border" />
             <OSBreadcrumbs />
+            <div className="ml-auto">
+              <ThemeToggle />
+            </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
             <Outlet />

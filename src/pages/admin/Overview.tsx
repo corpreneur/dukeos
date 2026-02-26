@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { format, subDays, isAfter, startOfMonth } from "date-fns";
+import { format, subDays, isAfter, startOfMonth, subMonths, startOfDay, endOfDay } from "date-fns";
 import {
   BarChart,
   Bar,
@@ -19,6 +19,8 @@ import {
   Legend,
   AreaChart,
   Area,
+  LineChart,
+  Line,
 } from "recharts";
 import {
   Briefcase,
@@ -33,6 +35,7 @@ import {
   User,
   FileText,
   Hash,
+  TrendingDown,
 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -167,6 +170,25 @@ const AdminOverview = () => {
       revenue: (cents * customerScaleFactor) / 100,
     }));
   }, [activeSubs, customerScaleFactor]);
+
+  // Churn rate (last 6 months)
+  const churnData = useMemo(() => {
+    if (!subscriptions?.length) return [];
+    const months: { month: string; churn: number }[] = [];
+    for (let i = 5; i >= 0; i--) {
+      const start = startOfMonth(subMonths(new Date(), i));
+      const end = i === 0 ? new Date() : startOfMonth(subMonths(new Date(), i - 1));
+      const label = format(start, "MMM");
+      const cancelled = subscriptions.filter(
+        (s: any) => s.cancelled_at && new Date(s.cancelled_at) >= start && new Date(s.cancelled_at) < end
+      ).length;
+      const totalAtStart = subscriptions.filter(
+        (s: any) => new Date(s.created_at) < end
+      ).length || 1;
+      months.push({ month: label, churn: Math.round((cancelled / totalAtStart) * 100 * customerScaleFactor) / customerScaleFactor });
+    }
+    return months;
+  }, [subscriptions, customerScaleFactor]);
 
   const formatCurrency = (cents: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -350,6 +372,41 @@ const AdminOverview = () => {
                   />
                   <Bar dataKey="revenue" fill="hsl(var(--primary))" radius={[6, 6, 0, 0]} />
                 </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-muted-foreground">No subscription data</div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Churn Rate - Line Chart */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="font-display text-base flex items-center gap-2">
+            <TrendingDown className="h-4 w-4 text-muted-foreground" />
+            Monthly Churn Rate
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[220px]">
+            {churnData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={churnData} margin={{ top: 5, right: 20, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="month" tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} tickFormatter={(v) => `${v}%`} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                      fontSize: 12,
+                    }}
+                    formatter={(value: number) => [`${value.toFixed(1)}%`, "Churn"]}
+                  />
+                  <Line type="monotone" dataKey="churn" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--destructive))" }} />
+                </LineChart>
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full text-sm text-muted-foreground">No subscription data</div>

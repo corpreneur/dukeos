@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User, Plus, Sparkles, FileText } from "lucide-react";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 import SubscriptionsTab from "@/components/dashboard/SubscriptionsTab";
 import AddressesTab from "@/components/dashboard/AddressesTab";
 import JobsTab from "@/components/dashboard/JobsTab";
@@ -74,6 +75,7 @@ const Dashboard = () => {
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {user?.email}
             </span>
+            <ThemeToggle />
             <Button variant="ghost" size="icon" onClick={signOut}>
               <LogOut className="h-4 w-4" />
             </Button>
