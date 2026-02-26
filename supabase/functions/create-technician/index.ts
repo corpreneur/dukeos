@@ -36,9 +36,10 @@ serve(async (req) => {
       .eq("role", "admin")
       .single();
 
-    if (!roleCheck) throw new Error("Only admins can create technicians");
+    if (!roleCheck) throw new Error("Only admins can create users");
 
-    const { email, full_name, password } = await req.json();
+    const { email, full_name, password, role } = await req.json();
+    const targetRole = role === "customer" ? "customer" : "technician";
     if (!email || !full_name || !password) throw new Error("email, full_name, and password are required");
 
     // Create user via admin API
@@ -52,12 +53,13 @@ serve(async (req) => {
     if (createError) throw createError;
 
     // The handle_new_user trigger creates a profile + customer role automatically.
-    // Now add the technician role
-    const { error: roleError } = await adminClient
-      .from("user_roles")
-      .insert({ user_id: newUser.user.id, role: "technician" });
-
-    if (roleError) throw roleError;
+    // If technician, add that role too
+    if (targetRole === "technician") {
+      const { error: roleError } = await adminClient
+        .from("user_roles")
+        .insert({ user_id: newUser.user.id, role: "technician" });
+      if (roleError) throw roleError;
+    }
 
     return new Response(JSON.stringify({
       success: true,

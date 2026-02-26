@@ -53,7 +53,7 @@ const Auth = () => {
             {isLogin ? "Welcome back" : "Create your account"}
           </CardTitle>
           <CardDescription>
-            {isLogin ? "Sign in to manage your lawn care" : "Get started with DukeOS"}
+            {isLogin ? "Sign in to manage your pet services" : "Get started with DukeOS"}
           </CardDescription>
         </CardHeader>
         <CardContent>
