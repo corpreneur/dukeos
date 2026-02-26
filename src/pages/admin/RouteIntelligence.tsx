@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, lazy, Suspense } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapPin, Navigation, Clock, RotateCcw, Truck, Loader2 } from "lucide-react";
+import { MapPin, Navigation, Clock, RotateCcw, Truck, Loader2, Wand2 } from "lucide-react";
+import { toast } from "sonner";
 import { format } from "date-fns";
 
 const TECH_COLORS = [
@@ -55,10 +56,12 @@ interface RouteResult {
 }
 
 const AdminRouteIntelligence = () => {
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [selectedTech, setSelectedTech] = useState<string>("all");
   const [optimizedRoute, setOptimizedRoute] = useState<RouteResult | null>(null);
   const [isOptimizing, setIsOptimizing] = useState(false);
+  const [isAutoScheduling, setIsAutoScheduling] = useState(false);
 
   const { data: jobs, isLoading: jobsLoading, error: jobsError } = useQuery({
     queryKey: ["admin-jobs"],
@@ -157,6 +160,26 @@ const AdminRouteIntelligence = () => {
     }
   };
 
+  const unassignedCount = useMemo(
+    () => jobs?.filter((j: any) => j.status === "scheduled" && !j.technician_id).length || 0,
+    [jobs]
+  );
+
+  const autoSchedule = async () => {
+    setIsAutoScheduling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-schedule");
+      if (error) throw error;
+      toast.success(data.message || `Assigned ${data.assigned} jobs`);
+      queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
+    } catch (err: any) {
+      console.error("Auto-schedule error:", err);
+      toast.error(err.message || "Auto-schedule failed");
+    } finally {
+      setIsAutoScheduling(false);
+    }
+  };
+
   const displayJobs = optimizedRoute ? optimizedRoute.orderedJobs : geoJobs;
   const noGeoJobs = filteredJobs.filter((j: any) => !hasValidCoordinates(j)).map(normalizeJobRelations);
 
@@ -208,6 +231,10 @@ const AdminRouteIntelligence = () => {
             <RotateCcw className="h-4 w-4" /> Reset
           </Button>
         )}
+        <Button variant="secondary" onClick={autoSchedule} disabled={unassignedCount === 0 || isAutoScheduling} className="gap-2">
+          {isAutoScheduling ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wand2 className="h-4 w-4" />}
+          {isAutoScheduling ? "Scheduling..." : `Auto-Schedule${unassignedCount > 0 ? ` (${unassignedCount})` : ""}`}
+        </Button>
       </div>
 
       {/* Summary Cards */}
