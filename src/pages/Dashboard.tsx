@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -29,6 +30,7 @@ type TabId = (typeof tabs)[number]["id"];
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   
   // Check if customer has any subscriptions
   const { data: subscriptions, isLoading: subsLoading } = useQuery({
@@ -72,6 +74,9 @@ const Dashboard = () => {
             ))}
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/dashboard/billing")}>
+              <CreditCard className="h-4 w-4" /> Billing
+            </Button>
             <span className="text-sm text-muted-foreground hidden sm:inline">
               {user?.email}
             </span>
