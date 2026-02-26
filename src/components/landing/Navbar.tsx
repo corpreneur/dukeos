@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Dog, Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,6 +12,7 @@ const navigation = [
 
 const Navbar = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <nav className="fixed left-0 right-0 top-0 z-50 border-b border-border/10 bg-secondary/80 backdrop-blur-xl">
@@ -35,10 +37,10 @@ const Navbar = () => {
         </div>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Button variant="ghost" className="text-secondary-foreground/70 hover:text-secondary-foreground hover:bg-secondary-foreground/10">
+          <Button variant="ghost" className="text-secondary-foreground/70 hover:text-secondary-foreground hover:bg-secondary-foreground/10" onClick={() => navigate("/auth")}>
             Log In
           </Button>
-          <Button variant="hero" size="sm" className="rounded-lg">
+          <Button variant="hero" size="sm" className="rounded-lg" onClick={() => navigate("/auth?signup=true")}>
             Get Started
           </Button>
         </div>
@@ -70,7 +72,7 @@ const Navbar = () => {
                   {item.name}
                 </a>
               ))}
-              <Button variant="hero" className="mt-2 w-full rounded-lg">
+              <Button variant="hero" className="mt-2 w-full rounded-lg" onClick={() => { setMobileOpen(false); navigate("/auth?signup=true"); }}>
                 Get Started
               </Button>
             </div>

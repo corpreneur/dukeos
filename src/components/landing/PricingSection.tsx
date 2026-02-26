@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -50,6 +51,8 @@ const plans = [
 ];
 
 const PricingSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="bg-background py-24" id="pricing">
       <div className="container mx-auto px-4">
@@ -100,6 +103,7 @@ const PricingSection = () => {
                 variant={plan.popular ? "hero" : "hero-outline"}
                 className="mb-8 w-full rounded-xl"
                 size="lg"
+                onClick={() => navigate("/auth?signup=true")}
               >
                 Get Started
               </Button>

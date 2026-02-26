@@ -2,9 +2,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
-export type AppRole = "admin" | "technician" | "customer";
+export type AppRole = "admin" | "manager" | "technician" | "customer";
 
-const ROLE_PRIORITY: Record<string, number> = { admin: 3, technician: 2, customer: 1 };
+const ROLE_PRIORITY: Record<string, number> = { admin: 4, manager: 3, technician: 2, customer: 1 };
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -26,5 +26,5 @@ export const useUserRole = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  return { role: role ?? "customer", isLoading, isAdmin: role === "admin", isTechnician: role === "technician", isCustomer: role === "customer" || !role };
+  return { role: role ?? "customer", isLoading, isAdmin: role === "admin" || role === "manager", isTechnician: role === "technician", isCustomer: role === "customer" || !role, isManager: role === "manager" };
 };

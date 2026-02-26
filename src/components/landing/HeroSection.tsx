@@ -1,9 +1,12 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import heroImage from "@/assets/hero-image.jpg";
 
 const HeroSection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative min-h-[90vh] overflow-hidden bg-hero">
       {/* Glow overlay */}
@@ -63,7 +66,7 @@ const HeroSection = () => {
               className="h-14 w-full rounded-xl border-0 bg-card pl-12 pr-4 text-card-foreground shadow-lg placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
-          <Button variant="hero" size="lg" className="h-14 rounded-xl px-8 text-base">
+          <Button variant="hero" size="lg" className="h-14 rounded-xl px-8 text-base" onClick={() => navigate("/auth?signup=true")}>
             Get Quote <ArrowRight className="ml-1 h-5 w-5" />
           </Button>
         </motion.div>

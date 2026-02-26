@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const CTASection = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="relative overflow-hidden bg-hero py-24">
       <div className="absolute inset-0 bg-glow" />
@@ -24,7 +27,7 @@ const CTASection = () => {
           <p className="mx-auto mb-10 max-w-xl text-lg text-primary-foreground/70">
             Join hundreds of DFW families who never think about yard cleanup again. Get your instant quote in 30 seconds.
           </p>
-          <Button variant="hero" size="lg" className="h-14 rounded-xl px-10 text-base animate-pulse-glow">
+          <Button variant="hero" size="lg" className="h-14 rounded-xl px-10 text-base animate-pulse-glow" onClick={() => navigate("/auth?signup=true")}>
             Get Your Free Quote <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
         </motion.div>
