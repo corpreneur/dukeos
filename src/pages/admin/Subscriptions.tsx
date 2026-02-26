@@ -4,13 +4,27 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { MoreHorizontal, Pause, XCircle, ArrowUpCircle } from "lucide-react";
+import { Pause, Play, XCircle, ArrowUpCircle, ArrowDownCircle } from "lucide-react";
 import { format } from "date-fns";
+
+const PLANS = [
+  { id: "basic", label: "Basic", price: 1800 },
+  { id: "standard", label: "Standard", price: 2500 },
+  { id: "premium", label: "Premium", price: 3500 },
+];
+
+const FREQUENCIES = ["weekly", "biweekly", "monthly"];
 
 const AdminSubscriptions = () => {
   const queryClient = useQueryClient();
+  const [changePlanSub, setChangePlanSub] = useState<any>(null);
+  const [newPlan, setNewPlan] = useState("");
+  const [newFreq, setNewFreq] = useState("");
+  const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
 
   const { data: subscriptions } = useQuery({
     queryKey: ["admin-subscriptions"],
@@ -52,16 +66,46 @@ const AdminSubscriptions = () => {
 
   const handlePause = (id: string) => updateSubscription.mutate({ id, updates: { active: false } });
   const handleResume = (id: string) => updateSubscription.mutate({ id, updates: { active: true, cancelled_at: null } });
-  const handleCancel = (id: string) => updateSubscription.mutate({ id, updates: { active: false, cancelled_at: new Date().toISOString() } });
-  const handleUpgrade = (id: string, currentPlan: string) => {
-    const next = currentPlan === "basic" ? "standard" : currentPlan === "standard" ? "premium" : "premium";
-    const price = next === "standard" ? 2500 : 3500;
-    updateSubscription.mutate({ id, updates: { plan: next, price_cents: price } });
+  const handleCancel = (id: string) => {
+    updateSubscription.mutate({ id, updates: { active: false, cancelled_at: new Date().toISOString() } });
+    setCancelConfirm(null);
   };
+
+  const openChangePlan = (sub: any) => {
+    setChangePlanSub(sub);
+    setNewPlan(sub.plan);
+    setNewFreq(sub.frequency);
+  };
+
+  const applyPlanChange = () => {
+    if (!changePlanSub) return;
+    const planConfig = PLANS.find(p => p.id === newPlan);
+    const numDogs = changePlanSub.num_dogs || 1;
+    updateSubscription.mutate({
+      id: changePlanSub.id,
+      updates: {
+        plan: newPlan,
+        frequency: newFreq,
+        price_cents: (planConfig?.price || 1800) * numDogs,
+      },
+    });
+    setChangePlanSub(null);
+  };
+
+  const activeCount = subscriptions?.filter((s: any) => s.active).length || 0;
+  const pausedCount = subscriptions?.filter((s: any) => !s.active && !s.cancelled_at).length || 0;
+  const cancelledCount = subscriptions?.filter((s: any) => s.cancelled_at).length || 0;
+  const mrr = subscriptions?.filter((s: any) => s.active).reduce((sum: number, s: any) => sum + s.price_cents, 0) || 0;
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-display font-bold text-foreground">All Subscriptions</h2>
+      <div>
+        <h2 className="text-2xl font-display font-bold text-foreground">All Subscriptions</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          {activeCount} active · {pausedCount} paused · {cancelledCount} cancelled · MRR ${(mrr / 100).toLocaleString()}
+        </p>
+      </div>
+
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
@@ -70,9 +114,9 @@ const AdminSubscriptions = () => {
               <TableHead>Plan</TableHead>
               <TableHead>Frequency</TableHead>
               <TableHead>Price</TableHead>
-              <TableHead>Address</TableHead>
+              <TableHead className="hidden md:table-cell">Address</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-12">Actions</TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -82,41 +126,38 @@ const AdminSubscriptions = () => {
                 <TableCell className="capitalize">{sub.plan}</TableCell>
                 <TableCell className="capitalize">{sub.frequency}</TableCell>
                 <TableCell>${(sub.price_cents / 100).toFixed(2)}</TableCell>
-                <TableCell>{sub.service_addresses?.street}, {sub.service_addresses?.city}</TableCell>
+                <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                  {sub.service_addresses?.street}, {sub.service_addresses?.city}
+                </TableCell>
                 <TableCell>
                   <Badge variant={sub.active ? "default" : sub.cancelled_at ? "destructive" : "secondary"}>
                     {sub.cancelled_at ? "Cancelled" : sub.active ? "Active" : "Paused"}
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
+                  <div className="flex gap-1 flex-wrap">
+                    {sub.active ? (
+                      <>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => openChangePlan(sub)}>
+                          <ArrowUpCircle className="h-3 w-3" /> Change Plan
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => handlePause(sub.id)}>
+                          <Pause className="h-3 w-3" /> Pause
+                        </Button>
+                        <Button variant="outline" size="sm" className="gap-1 h-7 text-xs text-destructive hover:text-destructive" onClick={() => setCancelConfirm(sub.id)}>
+                          <XCircle className="h-3 w-3" /> Cancel
+                        </Button>
+                      </>
+                    ) : !sub.cancelled_at ? (
+                      <Button variant="outline" size="sm" className="gap-1 h-7 text-xs" onClick={() => handleResume(sub.id)}>
+                        <Play className="h-3 w-3" /> Resume
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      {sub.active ? (
-                        <>
-                          <DropdownMenuItem onClick={() => handlePause(sub.id)}>
-                            <Pause className="h-4 w-4 mr-2" /> Pause
-                          </DropdownMenuItem>
-                          {sub.plan !== "premium" && (
-                            <DropdownMenuItem onClick={() => handleUpgrade(sub.id, sub.plan)}>
-                              <ArrowUpCircle className="h-4 w-4 mr-2" /> Upgrade
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem onClick={() => handleCancel(sub.id)} className="text-destructive">
-                            <XCircle className="h-4 w-4 mr-2" /> Cancel
-                          </DropdownMenuItem>
-                        </>
-                      ) : !sub.cancelled_at ? (
-                        <DropdownMenuItem onClick={() => handleResume(sub.id)}>
-                          Resume
-                        </DropdownMenuItem>
-                      ) : null}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(sub.cancelled_at), "MMM d, yyyy")}
+                      </span>
+                    )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -126,6 +167,72 @@ const AdminSubscriptions = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Change Plan Dialog */}
+      <Dialog open={!!changePlanSub} onOpenChange={(o) => !o && setChangePlanSub(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display">Change Subscription</DialogTitle>
+            <DialogDescription>
+              Update plan or frequency for {changePlanSub ? getCustomerName(changePlanSub) : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Plan</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {PLANS.map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setNewPlan(p.id)}
+                    className={`p-3 rounded-lg border text-center transition-all ${
+                      newPlan === p.id
+                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="text-sm font-medium capitalize">{p.label}</div>
+                    <div className="text-xs text-muted-foreground">${(p.price / 100).toFixed(0)}/dog</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>Frequency</Label>
+              <Select value={newFreq} onValueChange={setNewFreq}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {FREQUENCIES.map(f => (
+                    <SelectItem key={f} value={f} className="capitalize">{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setChangePlanSub(null)}>Cancel</Button>
+            <Button onClick={applyPlanChange}>Apply Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Cancel Confirmation */}
+      <Dialog open={!!cancelConfirm} onOpenChange={(o) => !o && setCancelConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="font-display text-destructive">Cancel Subscription</DialogTitle>
+            <DialogDescription>
+              This will deactivate the subscription and stop all future jobs. This action can't be undone easily.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelConfirm(null)}>Keep Active</Button>
+            <Button variant="destructive" onClick={() => cancelConfirm && handleCancel(cancelConfirm)}>
+              Yes, Cancel Subscription
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { ShieldCheck, ShieldX } from "lucide-react";
 import { format } from "date-fns";
 
-const ROLES = ["customer", "technician", "admin"] as const;
+const ROLES = ["customer", "technician", "manager", "admin"] as const;
 
 const RoleManagementTab = () => {
   const queryClient = useQueryClient();
