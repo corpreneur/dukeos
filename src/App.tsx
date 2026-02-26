@@ -19,9 +19,11 @@ import AdminSubscriptions from "./pages/admin/Subscriptions";
 import RoleManagementTab from "./components/admin/RoleManagementTab";
 import AdminCrew from "./pages/admin/Crew";
 import AdminRouteIntelligence from "./pages/admin/RouteIntelligence";
+import AdminCalendar from "./pages/admin/Calendar";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
+import TechMyRoute from "./pages/tech/MyRoute";
 import TechProfile from "./pages/tech/Profile";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,7 @@ const AdminRoutes = () => (
       <Route path="roles" element={<RoleManagementTab />} />
       <Route path="crew" element={<AdminCrew />} />
       <Route path="routes" element={<AdminRouteIntelligence />} />
+      <Route path="calendar" element={<AdminCalendar />} />
     </Route>
   </Routes>
 );
@@ -48,6 +51,7 @@ const TechRoutes = () => (
   <Routes>
     <Route element={<OSLayout />}>
       <Route index element={<TechMyJobs />} />
+      <Route path="my-route" element={<TechMyRoute />} />
       <Route path="profile" element={<TechProfile />} />
     </Route>
   </Routes>

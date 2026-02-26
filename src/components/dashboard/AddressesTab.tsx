@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { MapPin, Plus, Pencil, Trash2 } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { geocodeAddress } from "@/lib/geocode";
 
 interface AddressForm {
   label: string;
@@ -42,22 +43,30 @@ const AddressesTab = () => {
 
   const saveMutation = useMutation({
     mutationFn: async (data: AddressForm) => {
+      // Auto-geocode the address
+      const coords = await geocodeAddress(data.street, data.city, data.state, data.zip);
+      const payload = coords ? { ...data, lat: coords.lat, lng: coords.lng } : data;
+
       if (editId) {
         const { error } = await supabase
           .from("service_addresses")
-          .update(data)
+          .update(payload)
           .eq("id", editId);
         if (error) throw error;
       } else {
         const { error } = await supabase
           .from("service_addresses")
-          .insert({ ...data, customer_id: user!.id });
+          .insert({ ...payload, customer_id: user!.id });
         if (error) throw error;
       }
+      return !!coords;
     },
-    onSuccess: () => {
+    onSuccess: (geocoded) => {
       queryClient.invalidateQueries({ queryKey: ["customer-addresses"] });
       toast.success(editId ? "Address updated" : "Address added");
+      if (!geocoded) {
+        toast.info("Could not find coordinates for this address — route mapping may be limited");
+      }
       resetForm();
     },
     onError: (err: any) => toast.error(err.message),
@@ -148,7 +157,9 @@ const AddressesTab = () => {
                 </div>
               </div>
               <Button type="submit" className="w-full" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving..." : editId ? "Update" : "Add Address"}
+                {saveMutation.isPending ? (
+                  <span className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin" />{editId ? "Updating..." : "Adding..."}</span>
+                ) : editId ? "Update" : "Add Address"}
               </Button>
             </form>
           </DialogContent>
