@@ -17,6 +17,7 @@ import AdminJobs from "./pages/admin/Jobs";
 import AdminCustomers from "./pages/admin/Customers";
 import AdminSubscriptions from "./pages/admin/Subscriptions";
 import RoleManagementTab from "./components/admin/RoleManagementTab";
+import AdminCrew from "./pages/admin/Crew";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -36,6 +37,7 @@ const AdminRoutes = () => (
       <Route path="customers" element={<AdminCustomers />} />
       <Route path="subscriptions" element={<AdminSubscriptions />} />
       <Route path="roles" element={<RoleManagementTab />} />
+      <Route path="crew" element={<AdminCrew />} />
     </Route>
   </Routes>
 );
