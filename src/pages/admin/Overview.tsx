@@ -1,8 +1,9 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format, subDays, isAfter, startOfMonth } from "date-fns";
 import {
   BarChart,
@@ -28,6 +29,10 @@ import {
   DollarSign,
   CalendarDays,
   Clock,
+  MapPin,
+  User,
+  FileText,
+  Hash,
 } from "lucide-react";
 
 const statusColors: Record<string, string> = {
@@ -46,6 +51,7 @@ const PIE_COLORS = [
 
 const AdminOverview = () => {
   const queryClient = useQueryClient();
+  const [selectedJob, setSelectedJob] = useState<any>(null);
 
   useEffect(() => {
     const channel = supabase
@@ -363,7 +369,11 @@ const AdminOverview = () => {
           ) : (
             <div className="space-y-3">
               {jobs.slice(0, 5).map((job: any) => (
-                <div key={job.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
+                <div
+                  key={job.id}
+                  className="flex items-center justify-between p-3 rounded-lg border border-border cursor-pointer hover:bg-muted/50 transition-colors"
+                  onClick={() => setSelectedJob(job)}
+                >
                   <div>
                     <div className="font-display font-semibold text-sm text-foreground">
                       {format(new Date(job.scheduled_date), "MMM d, yyyy")}
@@ -381,6 +391,105 @@ const AdminOverview = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Job Detail Dialog */}
+      <Dialog open={!!selectedJob} onOpenChange={(open) => !open && setSelectedJob(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-display">Job Details</DialogTitle>
+          </DialogHeader>
+          {selectedJob && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className={`text-sm ${statusColors[selectedJob.status] || ""}`}>
+                  {selectedJob.status.replace("_", " ")}
+                </Badge>
+                <span className="text-xs text-muted-foreground font-mono">
+                  {selectedJob.id.slice(0, 8)}
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Scheduled Date</div>
+                    <div className="text-sm font-medium text-foreground">
+                      {format(new Date(selectedJob.scheduled_date), "EEEE, MMMM d, yyyy")}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Address</div>
+                    <div className="text-sm font-medium text-foreground">
+                      {selectedJob.service_addresses?.street}, {selectedJob.service_addresses?.city}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <CreditCard className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Plan</div>
+                    <div className="text-sm font-medium text-foreground capitalize">
+                      {selectedJob.subscriptions?.plan || "—"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  <div>
+                    <div className="text-xs text-muted-foreground">Technician</div>
+                    <div className="text-sm font-medium text-foreground">
+                      {selectedJob.technician_id
+                        ? profiles?.find((p: any) => p.user_id === selectedJob.technician_id)?.full_name || selectedJob.technician_id.slice(0, 8)
+                        : "Unassigned"}
+                    </div>
+                  </div>
+                </div>
+
+                {selectedJob.started_at && (
+                  <div className="flex items-start gap-3">
+                    <Clock className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Started</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {format(new Date(selectedJob.started_at), "MMM d, h:mm a")}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedJob.completed_at && (
+                  <div className="flex items-start gap-3">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Completed</div>
+                      <div className="text-sm font-medium text-foreground">
+                        {format(new Date(selectedJob.completed_at), "MMM d, h:mm a")}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {selectedJob.notes && (
+                  <div className="flex items-start gap-3">
+                    <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                    <div>
+                      <div className="text-xs text-muted-foreground">Notes</div>
+                      <div className="text-sm text-foreground">{selectedJob.notes}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
