@@ -43,6 +43,7 @@ import {
   DollarSign,
   Sparkles,
   Trophy,
+  BarChart3,
 } from "lucide-react";
 import { ReleaseTracker } from "@/components/layout/ReleaseTracker";
 
@@ -57,6 +58,7 @@ const adminNav = [
   { title: "Routes", url: "/dashboard/routes", icon: Route },
   { title: "Calendar", url: "/dashboard/calendar", icon: Calendar },
   { title: "Pricing", url: "/dashboard/pricing", icon: DollarSign },
+  { title: "Reports", url: "/dashboard/reports", icon: BarChart3 },
   { title: "Notifications", url: "/dashboard/notifications", icon: Bell },
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
 ];

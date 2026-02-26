@@ -17,7 +17,7 @@ const RoleRouter = ({ admin, technician, customer }: RoleRouterProps) => {
     );
   }
 
-  if (role === "admin") return <>{admin}</>;
+  if (role === "admin" || role === "manager") return <>{admin}</>;
   if (role === "technician") return <>{technician}</>;
   return <>{customer}</>;
 };

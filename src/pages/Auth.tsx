@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,9 +11,11 @@ import { Leaf } from "lucide-react";
 const Auth = () => {
   const { user, signIn, signUp } = useAuth();
   const navigate = useNavigate();
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("admin@dukeos.com");
-  const [password, setPassword] = useState("password123");
+  const [searchParams] = useSearchParams();
+  const signupParam = searchParams.get("signup") === "true";
+  const [isLogin, setIsLogin] = useState(!signupParam);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -53,7 +55,7 @@ const Auth = () => {
             {isLogin ? "Welcome back" : "Create your account"}
           </CardTitle>
           <CardDescription>
-            {isLogin ? "Sign in to manage your pet services" : "Get started with DukeOS"}
+            {isLogin ? "Sign in to manage your pet services" : "Get started with DukeOS — it only takes a minute"}
           </CardDescription>
         </CardHeader>
         <CardContent>

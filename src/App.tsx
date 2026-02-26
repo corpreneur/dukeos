@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import RoleRouter from "@/components/RoleRouter";
 import OSLayout from "@/components/layout/OSLayout";
+import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
@@ -24,6 +25,7 @@ import AdminNotifications from "./pages/admin/Notifications";
 import AdminPricing from "./pages/admin/Pricing";
 import AdminAddons from "./pages/admin/Addons";
 import AdminLeaderboard from "./pages/admin/Leaderboard";
+import AdminReports from "./pages/admin/Reports";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -47,6 +49,7 @@ const AdminRoutes = () => (
       <Route path="calendar" element={<AdminCalendar />} />
       <Route path="notifications" element={<AdminNotifications />} />
       <Route path="pricing" element={<AdminPricing />} />
+      <Route path="reports" element={<AdminReports />} />
     </Route>
   </Routes>
 );
@@ -69,7 +72,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route
               path="/dashboard/*"

@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User, Plus, Sparkles, FileText } from "lucide-react";
 import SubscriptionsTab from "@/components/dashboard/SubscriptionsTab";
@@ -26,7 +28,24 @@ type TabId = (typeof tabs)[number]["id"];
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabId>("jobs");
+  
+  // Check if customer has any subscriptions
+  const { data: subscriptions, isLoading: subsLoading } = useQuery({
+    queryKey: ["my-subscriptions", user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("subscriptions")
+        .select("id")
+        .eq("customer_id", user!.id)
+        .limit(1);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isNewCustomer = !subsLoading && (!subscriptions || subscriptions.length === 0);
+  const [activeTab, setActiveTab] = useState<TabId>(isNewCustomer ? "book" : "jobs");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
