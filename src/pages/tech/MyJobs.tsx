@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MapPin, Camera, Play, CheckCircle2, Navigation } from "lucide-react";
+import YardWatchButton from "@/components/tech/YardWatchButton";
 import { format } from "date-fns";
 
 const statusColors: Record<string, string> = {
@@ -82,12 +83,35 @@ const TechMyJobs = () => {
       const { error: uploadError } = await supabase.storage.from("job-proofs").upload(path, file);
       if (uploadError) throw uploadError;
       const { data: urlData } = supabase.storage.from("job-proofs").getPublicUrl(path);
-      const { error: insertError } = await supabase.from("job_proofs").insert({
+      const { data: proofData, error: insertError } = await supabase.from("job_proofs").insert({
         job_id: proofJobId, proof_type: proofType, image_url: urlData.publicUrl, uploaded_by: user.id,
-      });
+      }).select().single();
       if (insertError) throw insertError;
       queryClient.invalidateQueries({ queryKey: ["tech-proofs"] });
       toast.success(`${proofType} photo uploaded`);
+
+      // Trigger AI gate verification for "after" photos
+      if (proofType === "after" && proofData) {
+        toast.info("🔍 Running gate verification...");
+        try {
+          const verifyResult = await supabase.functions.invoke("verify-gate-photo", {
+            body: {
+              job_proof_id: proofData.id,
+              job_id: proofJobId,
+              image_url: urlData.publicUrl,
+            },
+          });
+          if (verifyResult.data?.verification?.latch_secure) {
+            toast.success("✅ Gate verified — latch is secure!");
+          } else {
+            toast.warning("⚠️ Gate check flagged — admin has been notified. Please verify the gate is latched.", { duration: 8000 });
+          }
+        } catch {
+          // Gate verification is non-blocking
+          console.error("Gate verification failed silently");
+        }
+      }
+
       setProofJobId(null);
     } catch (err: any) {
       toast.error(err.message);
@@ -161,6 +185,9 @@ const TechMyJobs = () => {
                       <Button variant="outline" size="sm" className="gap-1" onClick={() => openNavigation(job.service_addresses)}>
                         <Navigation className="h-3.5 w-3.5" /> Navigate
                       </Button>
+                    )}
+                    {(job.status === "in_progress" || job.status === "scheduled") && (
+                      <YardWatchButton jobId={job.id} />
                     )}
                     {job.status === "scheduled" && (
                       <Button size="sm" className="gap-1" onClick={() => updateStatus.mutate({ id: job.id, status: "in_progress" })}>

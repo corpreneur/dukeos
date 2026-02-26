@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      gate_verifications: {
+        Row: {
+          admin_alerted: boolean
+          ai_response: Json | null
+          confidence_score: number | null
+          created_at: string
+          gate_detected: boolean
+          id: string
+          job_id: string
+          job_proof_id: string
+          latch_secure: boolean
+          verified_at: string
+        }
+        Insert: {
+          admin_alerted?: boolean
+          ai_response?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          gate_detected?: boolean
+          id?: string
+          job_id: string
+          job_proof_id: string
+          latch_secure?: boolean
+          verified_at?: string
+        }
+        Update: {
+          admin_alerted?: boolean
+          ai_response?: Json | null
+          confidence_score?: number | null
+          created_at?: string
+          gate_detected?: boolean
+          id?: string
+          job_id?: string
+          job_proof_id?: string
+          latch_secure?: boolean
+          verified_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gate_verifications_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gate_verifications_job_proof_id_fkey"
+            columns: ["job_proof_id"]
+            isOneToOne: false
+            referencedRelation: "job_proofs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_proofs: {
         Row: {
           created_at: string
@@ -106,6 +160,45 @@ export type Database = {
           },
         ]
       }
+      notifications: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          read: boolean
+          sent_at: string
+          title: string | null
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          channel?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          read?: boolean
+          sent_at?: string
+          title?: string | null
+          type: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          read?: boolean
+          sent_at?: string
+          title?: string | null
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -141,6 +234,7 @@ export type Database = {
           city: string
           created_at: string
           customer_id: string
+          density_score: number | null
           id: string
           label: string
           lat: number | null
@@ -154,6 +248,7 @@ export type Database = {
           city: string
           created_at?: string
           customer_id: string
+          density_score?: number | null
           id?: string
           label?: string
           lat?: number | null
@@ -167,6 +262,7 @@ export type Database = {
           city?: string
           created_at?: string
           customer_id?: string
+          density_score?: number | null
           id?: string
           label?: string
           lat?: number | null
@@ -187,6 +283,7 @@ export type Database = {
           customer_id: string
           frequency: string
           id: string
+          num_dogs: number
           plan: string
           price_cents: number
           started_at: string
@@ -200,6 +297,7 @@ export type Database = {
           customer_id: string
           frequency?: string
           id?: string
+          num_dogs?: number
           plan?: string
           price_cents?: number
           started_at?: string
@@ -213,6 +311,7 @@ export type Database = {
           customer_id?: string
           frequency?: string
           id?: string
+          num_dogs?: number
           plan?: string
           price_cents?: number
           started_at?: string
@@ -340,6 +439,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      yard_issues: {
+        Row: {
+          created_at: string
+          id: string
+          issue_type: string
+          job_id: string
+          notes: string | null
+          photo_url: string | null
+          resolved: boolean
+          technician_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          issue_type: string
+          job_id: string
+          notes?: string | null
+          photo_url?: string | null
+          resolved?: boolean
+          technician_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          issue_type?: string
+          job_id?: string
+          notes?: string | null
+          photo_url?: string | null
+          resolved?: boolean
+          technician_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "yard_issues_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

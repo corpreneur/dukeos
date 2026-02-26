@@ -1,15 +1,17 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User } from "lucide-react";
+import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User, Plus } from "lucide-react";
 import SubscriptionsTab from "@/components/dashboard/SubscriptionsTab";
 import AddressesTab from "@/components/dashboard/AddressesTab";
 import JobsTab from "@/components/dashboard/JobsTab";
 import ProfileTab from "@/components/dashboard/ProfileTab";
+import BookingWizard from "@/components/booking/BookingWizard";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { id: "jobs", label: "Upcoming Jobs", icon: CalendarDays },
+  { id: "book", label: "Book Service", icon: Plus },
   { id: "subscriptions", label: "Subscriptions", icon: CreditCard },
   { id: "addresses", label: "Addresses", icon: MapPin },
   { id: "profile", label: "Profile", icon: User },
@@ -83,6 +85,7 @@ const Dashboard = () => {
 
       <main className="container px-4 py-8">
         {activeTab === "jobs" && <JobsTab />}
+        {activeTab === "book" && <BookingWizard onComplete={() => setActiveTab("subscriptions")} />}
         {activeTab === "subscriptions" && <SubscriptionsTab />}
         {activeTab === "addresses" && <AddressesTab />}
         {activeTab === "profile" && <ProfileTab />}
