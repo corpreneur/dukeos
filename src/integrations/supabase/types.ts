@@ -228,6 +228,101 @@ export type Database = {
           },
         ]
       }
+      technician_availability: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          end_time: string
+          id: string
+          is_available: boolean
+          start_time: string
+          technician_id: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          start_time?: string
+          technician_id: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          end_time?: string
+          id?: string
+          is_available?: boolean
+          start_time?: string
+          technician_id?: string
+        }
+        Relationships: []
+      }
+      technician_skills: {
+        Row: {
+          certified: boolean
+          created_at: string
+          expires_at: string | null
+          id: string
+          skill: string
+          technician_id: string
+        }
+        Insert: {
+          certified?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          skill: string
+          technician_id: string
+        }
+        Update: {
+          certified?: boolean
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          skill?: string
+          technician_id?: string
+        }
+        Relationships: []
+      }
+      time_entries: {
+        Row: {
+          clock_in: string
+          clock_out: string | null
+          created_at: string
+          id: string
+          job_id: string
+          notes: string | null
+          technician_id: string
+        }
+        Insert: {
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          job_id: string
+          notes?: string | null
+          technician_id: string
+        }
+        Update: {
+          clock_in?: string
+          clock_out?: string | null
+          created_at?: string
+          id?: string
+          job_id?: string
+          notes?: string | null
+          technician_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_entries_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string

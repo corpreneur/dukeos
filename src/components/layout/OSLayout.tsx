@@ -36,6 +36,7 @@ import {
   MapPin,
   Camera,
   User,
+  HardHat,
 } from "lucide-react";
 
 const adminNav = [
@@ -44,6 +45,7 @@ const adminNav = [
   { title: "Customers", url: "/dashboard/customers", icon: Users },
   { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
+  { title: "Crew", url: "/dashboard/crew", icon: HardHat },
 ];
 
 const techNav = [
