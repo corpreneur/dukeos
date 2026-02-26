@@ -62,6 +62,7 @@ function AppSidebarContent() {
   const { signOut } = useAuth();
   const { role, isAdmin } = useUserRole();
   const navigate = useNavigate();
+  const { setOpenMobile, isMobile } = useSidebar();
 
   const items = isAdmin ? adminNav : techNav;
   const roleLabel = isAdmin ? "Admin" : "Technician";
@@ -69,6 +70,10 @@ function AppSidebarContent() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleNavClick = () => {
+    if (isMobile) setOpenMobile(false);
   };
 
   return (
@@ -96,6 +101,7 @@ function AppSidebarContent() {
                       end={item.end}
                       className="flex items-center gap-3 px-3 py-2 rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
                       activeClassName="bg-sidebar-accent text-primary font-medium"
+                      onClick={handleNavClick}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span className="group-data-[collapsible=icon]:hidden">{item.title}</span>
