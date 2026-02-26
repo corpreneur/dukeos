@@ -44,6 +44,7 @@ import {
   Sparkles,
   Trophy,
 } from "lucide-react";
+import { ReleaseTracker } from "@/components/layout/ReleaseTracker";
 
 const adminNav = [
   { title: "Overview", url: "/dashboard", icon: Briefcase, end: true },
@@ -122,15 +123,18 @@ function AppSidebarContent() {
         </SidebarGroup>
       </SidebarContent>
 
-      <div className="mt-auto p-3 border-t border-sidebar-border">
-        <Button
-          variant="ghost"
-          className="w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive"
-          onClick={handleSignOut}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
-        </Button>
+      <div className="mt-auto">
+        <ReleaseTracker />
+        <div className="p-3 border-t border-sidebar-border">
+          <Button
+            variant="ghost"
+            className="w-full justify-start gap-3 text-sidebar-foreground hover:text-destructive"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 shrink-0" />
+            <span className="group-data-[collapsible=icon]:hidden">Sign Out</span>
+          </Button>
+        </div>
       </div>
     </Sidebar>
   );
