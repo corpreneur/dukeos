@@ -17,9 +17,9 @@ interface ReleaseItem {
 }
 
 const typeConfig: Record<ReleaseType, { icon: typeof Sparkles; label: string; className: string }> = {
-  feature: { icon: Sparkles, label: "Feature", className: "bg-primary/15 text-primary border-primary/30" },
-  fix: { icon: Bug, label: "Fix", className: "bg-destructive/15 text-destructive border-destructive/30" },
-  improvement: { icon: Wrench, label: "Improve", className: "bg-accent/40 text-accent-foreground border-accent/60" },
+  feature: { icon: Sparkles, label: "Feature", className: "bg-emerald-500/10 text-emerald-600 border-emerald-500/25 dark:text-emerald-400" },
+  fix: { icon: Bug, label: "Fix", className: "bg-amber-500/10 text-amber-600 border-amber-500/25 dark:text-amber-400" },
+  improvement: { icon: Wrench, label: "Improve", className: "bg-sky-500/10 text-sky-600 border-sky-500/25 dark:text-sky-400" },
 };
 
 // Sample release data — replace with real data source
