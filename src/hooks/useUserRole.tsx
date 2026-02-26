@@ -4,6 +4,8 @@ import { useAuth } from "@/hooks/useAuth";
 
 export type AppRole = "admin" | "technician" | "customer";
 
+const ROLE_PRIORITY: Record<string, number> = { admin: 3, technician: 2, customer: 1 };
+
 export const useUserRole = () => {
   const { user } = useAuth();
 
@@ -13,10 +15,12 @@ export const useUserRole = () => {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user!.id)
-        .single();
+        .eq("user_id", user!.id);
       if (error) throw error;
-      return data.role as AppRole;
+      if (!data || data.length === 0) return "customer" as AppRole;
+      // Return highest-priority role
+      const sorted = data.sort((a, b) => (ROLE_PRIORITY[b.role] || 0) - (ROLE_PRIORITY[a.role] || 0));
+      return sorted[0].role as AppRole;
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000,
