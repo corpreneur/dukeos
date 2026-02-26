@@ -4,8 +4,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CreditCard, MapPin, XCircle } from "lucide-react";
+import { CreditCard, MapPin, XCircle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { generateInvoicePDF } from "@/lib/pdf-generators";
+import { useProfile } from "@/hooks/useProfile";
 import NewSubscriptionDialog from "@/components/dashboard/NewSubscriptionDialog";
 import {
   AlertDialog,
@@ -21,6 +23,7 @@ import {
 
 const SubscriptionsTab = () => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const queryClient = useQueryClient();
 
   const { data: subscriptions, isLoading } = useQuery({
@@ -108,12 +111,12 @@ const SubscriptionsTab = () => {
                   {sub.service_addresses.street}, {sub.service_addresses.city}
                 </div>
               )}
-              {sub.active && (
-                <div className="pt-2 border-t border-border">
+              <div className="pt-2 border-t border-border flex items-center gap-2">
+                {sub.active && (
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
                       <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
-                        <XCircle className="h-3.5 w-3.5" /> Cancel Subscription
+                        <XCircle className="h-3.5 w-3.5" /> Cancel
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -134,8 +137,30 @@ const SubscriptionsTab = () => {
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
-                </div>
-              )}
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1"
+                  onClick={() =>
+                    generateInvoicePDF({
+                      customerName: profile?.full_name || "",
+                      customerEmail: user?.email || "",
+                      address: sub.service_addresses
+                        ? `${sub.service_addresses.street}, ${sub.service_addresses.city}, ${sub.service_addresses.state} ${sub.service_addresses.zip}`
+                        : "N/A",
+                      plan: sub.plan,
+                      frequency: sub.frequency,
+                      numDogs: sub.num_dogs,
+                      priceCents: sub.price_cents,
+                      startedAt: sub.started_at,
+                      subscriptionId: sub.id,
+                    })
+                  }
+                >
+                  <Download className="h-3.5 w-3.5" /> Invoice PDF
+                </Button>
+              </div>
             </CardContent>
           </Card>
         ))}
