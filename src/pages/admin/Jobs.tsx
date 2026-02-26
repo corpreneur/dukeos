@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus, Filter, X } from "lucide-react";
+import { Plus, Filter, X, Wand2 } from "lucide-react";
 import { format } from "date-fns";
 
 const statusColors: Record<string, string> = {
@@ -23,6 +23,7 @@ const AdminJobs = () => {
   const queryClient = useQueryClient();
   const [newJobOpen, setNewJobOpen] = useState(false);
   const [newJobForm, setNewJobForm] = useState({ subscription_id: "", scheduled_date: "", technician_id: "" });
+  const [autoScheduling, setAutoScheduling] = useState(false);
 
   // Filters
   const [filterStatus, setFilterStatus] = useState<string>("all");
@@ -152,6 +153,20 @@ const AdminJobs = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const handleAutoSchedule = async () => {
+    setAutoScheduling(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("auto-schedule");
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
+      toast.success(data?.message || "Auto-scheduling complete");
+    } catch (err: any) {
+      toast.error(err.message || "Auto-schedule failed");
+    } finally {
+      setAutoScheduling(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -161,6 +176,10 @@ const AdminJobs = () => {
             {filteredJobs.length} job{filteredJobs.length !== 1 ? "s" : ""}{hasFilters ? " (filtered)" : ""}
           </p>
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleAutoSchedule} disabled={autoScheduling}>
+            <Wand2 className="h-4 w-4" /> {autoScheduling ? "Scheduling..." : "Smart Schedule"}
+          </Button>
         <Dialog open={newJobOpen} onOpenChange={setNewJobOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2"><Plus className="h-4 w-4" /> New Job</Button>
@@ -200,6 +219,7 @@ const AdminJobs = () => {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Filters */}
