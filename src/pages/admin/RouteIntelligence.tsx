@@ -228,7 +228,7 @@ const AdminRouteIntelligence = () => {
         positions.reduce((s, p) => s + p[0], 0) / positions.length,
         positions.reduce((s, p) => s + p[1], 0) / positions.length,
       ]
-    : [35.78, -78.64]; // Default to Raleigh, NC
+    : [33.20, -96.63]; // Default to McKinney/Frisco, TX
 
   const isLoadingData = jobsLoading || techRolesLoading || profilesLoading;
   const hasDataError = !!jobsError || !!techRolesError || !!profilesError;

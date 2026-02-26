@@ -1,21 +1,25 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, MapPin, CreditCard, Briefcase, AlertTriangle, Dog, Calendar, ChevronRight } from "lucide-react";
+import { Search, MapPin, CreditCard, Briefcase, AlertTriangle, Dog, Calendar, ChevronRight, Plus } from "lucide-react";
 import { format, subDays } from "date-fns";
+import { toast } from "sonner";
 
 const MOCK_FIRST = ["James","Mary","Robert","Patricia","John","Jennifer","Michael","Linda","David","Elizabeth","William","Barbara","Richard","Susan","Joseph","Jessica","Thomas","Sarah","Charles","Karen","Christopher","Lisa","Daniel","Nancy","Matthew","Betty","Anthony","Margaret","Mark","Sandra","Donald","Ashley","Steven","Dorothy","Paul","Kimberly","Andrew","Emily","Joshua","Donna","Kenneth","Michelle","Kevin","Carol","Brian","Amanda","George","Melissa","Timothy","Deborah","Ronald","Stephanie","Edward","Rebecca","Jason","Sharon","Jeffrey","Laura","Ryan","Cynthia","Jacob","Kathleen","Gary","Amy","Nicholas","Angela","Eric","Shirley","Jonathan","Anna","Stephen","Brenda","Larry","Pamela","Justin","Emma","Scott","Nicole","Brandon","Helen","Benjamin","Samantha","Samuel","Katherine","Raymond","Christine","Gregory","Debra","Frank","Rachel","Alexander","Carolyn","Patrick","Janet","Jack","Catherine","Dennis","Maria","Jerry","Heather","Tyler","Diane","Aaron","Ruth","Jose","Julie","Adam","Olivia","Nathan","Joyce","Henry","Virginia","Peter","Victoria","Zachary","Kelly","Douglas","Lauren","Harold","Christina","Carl","Joan","Arthur","Evelyn","Dylan","Judith","Jordan","Megan","Wayne","Andrea","Alan","Cheryl","Ralph","Hannah","Roy","Jacqueline","Eugene","Martha","Russell","Gloria","Bobby","Teresa"];
 const MOCK_LAST = ["Smith","Johnson","Williams","Brown","Jones","Garcia","Miller","Davis","Rodriguez","Martinez","Hernandez","Lopez","Gonzalez","Wilson","Anderson","Thomas","Taylor","Moore","Jackson","Martin","Lee","Perez","Thompson","White","Harris","Sanchez","Clark","Ramirez","Lewis","Robinson","Walker","Young","Allen","King","Wright","Scott","Torres","Nguyen","Hill","Flores","Green","Adams","Nelson","Baker","Hall","Rivera","Campbell","Mitchell","Carter","Roberts","Gomez","Phillips","Evans","Turner","Diaz","Parker","Cruz","Edwards","Collins","Reyes","Stewart","Morris","Morales","Murphy","Cook","Rogers","Gutierrez","Ortiz","Morgan","Cooper","Peterson","Bailey","Reed","Kelly","Howard","Ramos","Kim","Cox","Ward","Richardson","Watson","Brooks","Chavez","Wood","James","Bennett","Gray","Mendoza","Ruiz","Hughes","Price","Alvarez","Castillo","Sanders","Patel","Myers","Long","Ross","Foster","Jimenez","Powell","Jenkins","Perry","Russell","Sullivan","Bell","Coleman","Butler","Henderson","Barnes","Gonzales","Fisher","Vasquez","Simmons","Graham","Murray","Ford","Castro","Marshall","Owens","Harrison","Fernandez","McDonald","Woods","Washington","Kennedy","Wells","Vargas","Henry","Chen","Freeman","Webb","Tucker","Guzman"];
-const MOCK_AREAS = ["919","984","704","336","252","828","910"];
+const MOCK_AREAS = ["469","972","214","817","682","940","903"];
 const MOCK_STATUSES = ["active","active","active","active","active","active","active","active","inactive","pending"] as const;
 const MOCK_STREETS = ["Oak St","Maple Ave","Pine Dr","Cedar Ln","Elm Blvd","Birch Ct","Willow Way","Poplar Rd","Spruce Pl","Hickory Trl","Dogwood Dr","Magnolia Ln","Peachtree St","Azalea Way","Cypress Ct"];
-const MOCK_CITIES = ["Raleigh","Durham","Cary","Apex","Morrisville","Holly Springs","Fuquay-Varina","Wake Forest","Garner","Clayton"];
+const MOCK_CITIES = ["McKinney","Frisco","Celina","Allen","Plano","Dallas","Prosper","Anna","Princeton","Melissa"];
 const MOCK_PLANS = ["basic","standard","premium"];
 const MOCK_FREQS = ["weekly","biweekly","monthly"];
 const MOCK_ISSUES = ["long_grass","broken_fence","standing_water","pet_waste_buildup","pest_infestation"];
@@ -62,8 +66,8 @@ function generateMockCustomers(realProfiles: any[]): MockCustomer[] {
     const addresses = Array.from({ length: addrCount }, (_, ai) => ({
       street: `${Math.floor(seededRandom(i * 10 + ai + 810) * 9000 + 100)} ${MOCK_STREETS[Math.floor(seededRandom(i * 10 + ai + 820) * MOCK_STREETS.length)]}`,
       city: MOCK_CITIES[Math.floor(seededRandom(i * 10 + ai + 830) * MOCK_CITIES.length)],
-      state: "NC",
-      zip: `2${String(Math.floor(seededRandom(i * 10 + ai + 840) * 9000 + 1000))}`,
+      state: "TX",
+      zip: `7${String(Math.floor(seededRandom(i * 10 + ai + 840) * 5000 + 5000))}`,
       label: ai === 0 ? "Home" : "Vacation",
     }));
 
@@ -114,8 +118,11 @@ const statusColors: Record<string, string> = {
 };
 
 const AdminCustomers = () => {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState<MockCustomer | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [newCustomer, setNewCustomer] = useState({ email: "", password: "", full_name: "", phone: "" });
 
   const { data: profiles } = useQuery({
     queryKey: ["admin-profiles"],
@@ -205,6 +212,27 @@ const AdminCustomers = () => {
     return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
   }).length;
 
+  const addCustomer = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke("create-technician", {
+        body: { email: newCustomer.email, password: newCustomer.password, full_name: newCustomer.full_name, role: "customer" },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      // Update phone if provided
+      if (newCustomer.phone && data?.user_id) {
+        await supabase.from("profiles").update({ phone: newCustomer.phone }).eq("user_id", data.user_id);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
+      toast.success("Customer created");
+      setAddOpen(false);
+      setNewCustomer({ email: "", password: "", full_name: "", phone: "" });
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -214,9 +242,40 @@ const AdminCustomers = () => {
             {allCustomers.length} total · {activeCount} active · {thisMonth} new this month
           </p>
         </div>
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <div className="flex items-center gap-3">
+          <div className="relative w-full sm:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input placeholder="Search customers..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+          </div>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shrink-0"><Plus className="h-4 w-4" /> Add Customer</Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader><DialogTitle className="font-display">Add Customer</DialogTitle></DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Full Name</Label>
+                  <Input value={newCustomer.full_name} onChange={(e) => setNewCustomer(p => ({ ...p, full_name: e.target.value }))} placeholder="Jane Smith" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email</Label>
+                  <Input type="email" value={newCustomer.email} onChange={(e) => setNewCustomer(p => ({ ...p, email: e.target.value }))} placeholder="jane@example.com" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Password</Label>
+                  <Input type="password" value={newCustomer.password} onChange={(e) => setNewCustomer(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Phone (optional)</Label>
+                  <Input value={newCustomer.phone} onChange={(e) => setNewCustomer(p => ({ ...p, phone: e.target.value }))} placeholder="(469) 555-1234" />
+                </div>
+                <Button className="w-full" onClick={() => addCustomer.mutate()} disabled={!newCustomer.email || !newCustomer.password || !newCustomer.full_name || addCustomer.isPending}>
+                  {addCustomer.isPending ? "Creating..." : "Create Customer"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -226,6 +285,8 @@ const AdminCustomers = () => {
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
+              <TableHead className="hidden md:table-cell">Address</TableHead>
+              <TableHead className="hidden md:table-cell">Plan</TableHead>
               <TableHead className="hidden sm:table-cell">Dogs</TableHead>
               <TableHead className="hidden sm:table-cell">Status</TableHead>
               <TableHead>Joined</TableHead>
@@ -237,6 +298,14 @@ const AdminCustomers = () => {
               <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(p)}>
                 <TableCell className="font-medium">{p.full_name || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.phone || "—"}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
+                  {p.addresses.length > 0 ? `${p.addresses[0].street}, ${p.addresses[0].city}` : "—"}
+                </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {p.subscriptions.length > 0 ? (
+                    <Badge variant="outline" className="capitalize text-xs">{p.subscriptions[0].plan}</Badge>
+                  ) : "—"}
+                </TableCell>
                 <TableCell className="hidden sm:table-cell">{p.dogs}</TableCell>
                 <TableCell className="hidden sm:table-cell">
                   <Badge variant={p.status === "active" ? "default" : p.status === "pending" ? "secondary" : "outline"} className="capitalize text-xs">{p.status}</Badge>

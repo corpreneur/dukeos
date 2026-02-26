@@ -58,9 +58,16 @@ const AdminJobs = () => {
         .select("*, service_addresses(street, city), subscriptions(plan, customer_id)")
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
+
+  // Build a customer name lookup from profiles
+  const getCustomerName = (job: any) => {
+    const customerId = Array.isArray(job.subscriptions) ? job.subscriptions[0]?.customer_id : job.subscriptions?.customer_id;
+    const profile = profiles?.find((p: any) => p.user_id === customerId);
+    return profile?.full_name || "—";
+  };
 
   const { data: subscriptions } = useQuery({
     queryKey: ["admin-subscriptions"],
@@ -269,9 +276,10 @@ const AdminJobs = () => {
 
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
-          <TableHeader>
+           <TableHeader>
             <TableRow>
               <TableHead>Date</TableHead>
+              <TableHead>Customer</TableHead>
               <TableHead>Address</TableHead>
               <TableHead>Plan</TableHead>
               <TableHead>Technician</TableHead>
@@ -285,6 +293,7 @@ const AdminJobs = () => {
               return (
                 <TableRow key={job.id}>
                   <TableCell className="font-medium">{format(new Date(job.scheduled_date), "MMM d, yyyy")}</TableCell>
+                  <TableCell className="font-medium">{getCustomerName(job)}</TableCell>
                   <TableCell>{job.service_addresses?.street}, {job.service_addresses?.city}</TableCell>
                   <TableCell className="capitalize">{job.subscriptions?.plan}</TableCell>
                   <TableCell>
@@ -315,7 +324,7 @@ const AdminJobs = () => {
               );
             })}
             {filteredJobs.length === 0 && (
-              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No jobs match filters</TableCell></TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No jobs match filters</TableCell></TableRow>
             )}
           </TableBody>
         </Table>
