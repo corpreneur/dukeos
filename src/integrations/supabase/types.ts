@@ -14,16 +14,255 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      job_proofs: {
+        Row: {
+          created_at: string
+          id: string
+          image_url: string
+          job_id: string
+          proof_type: Database["public"]["Enums"]["proof_type"]
+          uploaded_by: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          image_url: string
+          job_id: string
+          proof_type: Database["public"]["Enums"]["proof_type"]
+          uploaded_by: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          image_url?: string
+          job_id?: string
+          proof_type?: Database["public"]["Enums"]["proof_type"]
+          uploaded_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_proofs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      jobs: {
+        Row: {
+          address_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          scheduled_date: string
+          started_at: string | null
+          status: Database["public"]["Enums"]["job_status"]
+          subscription_id: string
+          technician_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          subscription_id: string
+          technician_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          scheduled_date?: string
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["job_status"]
+          subscription_id?: string
+          technician_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "jobs_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "service_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      service_addresses: {
+        Row: {
+          city: string
+          created_at: string
+          customer_id: string
+          id: string
+          label: string
+          lat: number | null
+          lng: number | null
+          state: string
+          street: string
+          updated_at: string
+          zip: string
+        }
+        Insert: {
+          city: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          label?: string
+          lat?: number | null
+          lng?: number | null
+          state?: string
+          street: string
+          updated_at?: string
+          zip: string
+        }
+        Update: {
+          city?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          label?: string
+          lat?: number | null
+          lng?: number | null
+          state?: string
+          street?: string
+          updated_at?: string
+          zip?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          active: boolean
+          address_id: string
+          cancelled_at: string | null
+          created_at: string
+          customer_id: string
+          frequency: string
+          id: string
+          plan: string
+          price_cents: number
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          address_id: string
+          cancelled_at?: string | null
+          created_at?: string
+          customer_id: string
+          frequency?: string
+          id?: string
+          plan?: string
+          price_cents?: number
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          address_id?: string
+          cancelled_at?: string | null
+          created_at?: string
+          customer_id?: string
+          frequency?: string
+          id?: string
+          plan?: string
+          price_cents?: number
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_address_id_fkey"
+            columns: ["address_id"]
+            isOneToOne: false
+            referencedRelation: "service_addresses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "admin" | "technician" | "customer"
+      job_status: "scheduled" | "in_progress" | "completed" | "cancelled"
+      proof_type: "before" | "after"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +389,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "technician", "customer"],
+      job_status: ["scheduled", "in_progress", "completed", "cancelled"],
+      proof_type: ["before", "after"],
+    },
   },
 } as const
