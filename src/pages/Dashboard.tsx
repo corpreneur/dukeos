@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X } from "lucide-react";
+import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User } from "lucide-react";
 import SubscriptionsTab from "@/components/dashboard/SubscriptionsTab";
 import AddressesTab from "@/components/dashboard/AddressesTab";
 import JobsTab from "@/components/dashboard/JobsTab";
+import ProfileTab from "@/components/dashboard/ProfileTab";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { id: "jobs", label: "Upcoming Jobs", icon: CalendarDays },
   { id: "subscriptions", label: "Subscriptions", icon: CreditCard },
   { id: "addresses", label: "Addresses", icon: MapPin },
+  { id: "profile", label: "Profile", icon: User },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -22,7 +24,6 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Top navbar */}
       <header className="sticky top-0 z-50 border-b border-border bg-card/80 backdrop-blur-md">
         <div className="container flex items-center justify-between h-16 px-4">
           <div className="flex items-center gap-2">
@@ -60,7 +61,6 @@ const Dashboard = () => {
             </Button>
           </div>
         </div>
-        {/* Mobile nav */}
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-card p-2 space-y-1">
             {tabs.map((tab) => (
@@ -81,11 +81,11 @@ const Dashboard = () => {
         )}
       </header>
 
-      {/* Content */}
       <main className="container px-4 py-8">
         {activeTab === "jobs" && <JobsTab />}
         {activeTab === "subscriptions" && <SubscriptionsTab />}
         {activeTab === "addresses" && <AddressesTab />}
+        {activeTab === "profile" && <ProfileTab />}
       </main>
     </div>
   );
