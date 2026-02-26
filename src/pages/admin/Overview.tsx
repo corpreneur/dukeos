@@ -120,14 +120,14 @@ const AdminOverview = () => {
     const counts: Record<string, number> = { scheduled: 0, in_progress: 0, completed: 0, cancelled: 0 };
     jobs.forEach((j: any) => { counts[j.status] = (counts[j.status] || 0) + 1; });
     return [
-      { name: "Scheduled", value: counts.scheduled },
-      { name: "In Progress", value: counts.in_progress },
-      { name: "Completed", value: counts.completed },
-      { name: "Cancelled", value: counts.cancelled },
+      { name: "Scheduled", value: Math.round(counts.scheduled * customerScaleFactor) },
+      { name: "In Progress", value: Math.round(counts.in_progress * customerScaleFactor) },
+      { name: "Completed", value: Math.round(counts.completed * customerScaleFactor) },
+      { name: "Cancelled", value: Math.round(counts.cancelled * customerScaleFactor) },
     ].filter(d => d.value > 0);
-  }, [jobs]);
+  }, [jobs, customerScaleFactor]);
 
-  // Jobs per day (last 14 days) for area chart
+  // Jobs per day (last 14 days) for area chart — scaled to demo factor
   const jobsPerDay = useMemo(() => {
     if (!jobs?.length) return [];
     const days: { date: string; jobs: number; completed: number }[] = [];
@@ -138,12 +138,12 @@ const AdminOverview = () => {
       const dayJobs = jobs.filter((j: any) => j.scheduled_date === dayStr);
       days.push({
         date: label,
-        jobs: dayJobs.length,
-        completed: dayJobs.filter((j: any) => j.status === "completed").length,
+        jobs: Math.round(dayJobs.length * customerScaleFactor),
+        completed: Math.round(dayJobs.filter((j: any) => j.status === "completed").length * customerScaleFactor),
       });
     }
     return days;
-  }, [jobs]);
+  }, [jobs, customerScaleFactor]);
 
   // Revenue by plan for bar chart
   const revenueByPlan = useMemo(() => {
