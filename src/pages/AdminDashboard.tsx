@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,8 +11,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Leaf, LogOut, Users, CalendarDays, CreditCard, MapPin, Plus, Briefcase } from "lucide-react";
+import { Leaf, LogOut, Users, CalendarDays, CreditCard, MapPin, Plus, Briefcase, ShieldCheck } from "lucide-react";
 import { format } from "date-fns";
+import RoleManagementTab from "@/components/admin/RoleManagementTab";
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-primary/10 text-primary border-primary/20",
@@ -26,6 +27,7 @@ const tabs = [
   { id: "jobs", label: "Jobs", icon: CalendarDays },
   { id: "customers", label: "Customers", icon: Users },
   { id: "subscriptions", label: "Subscriptions", icon: CreditCard },
+  { id: "roles", label: "Roles", icon: ShieldCheck },
 ] as const;
 
 type TabId = (typeof tabs)[number]["id"];
@@ -36,6 +38,17 @@ const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<TabId>("overview");
   const [newJobOpen, setNewJobOpen] = useState(false);
   const [newJobForm, setNewJobForm] = useState({ subscription_id: "", address_id: "", scheduled_date: "", technician_id: "" });
+
+  // Realtime subscription for jobs
+  useEffect(() => {
+    const channel = supabase
+      .channel("admin-jobs-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["admin-jobs"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   // Queries
   const { data: jobs } = useQuery({
@@ -370,6 +383,8 @@ const AdminDashboard = () => {
             </div>
           </div>
         )}
+
+        {activeTab === "roles" && <RoleManagementTab />}
       </main>
     </div>
   );
