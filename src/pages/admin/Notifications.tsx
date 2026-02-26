@@ -9,7 +9,7 @@ import { Bell, AlertTriangle, ShieldAlert, TrendingUp } from "lucide-react";
 import { format } from "date-fns";
 
 const AdminNotifications = () => {
-  const { data: notifications } = useQuery({
+  const { data: notifications, isLoading: loadingNotifs, error: errorNotifs } = useQuery({
     queryKey: ["admin-notifications"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -18,11 +18,11 @@ const AdminNotifications = () => {
         .order("created_at", { ascending: false })
         .limit(200);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
-  const { data: gateVerifications } = useQuery({
+  const { data: gateVerifications, isLoading: loadingGates, error: errorGates } = useQuery({
     queryKey: ["admin-gate-verifications"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -31,11 +31,11 @@ const AdminNotifications = () => {
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
 
-  const { data: yardIssues } = useQuery({
+  const { data: yardIssues, isLoading: loadingYard, error: errorYard } = useQuery({
     queryKey: ["admin-yard-issues-all"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -44,14 +44,35 @@ const AdminNotifications = () => {
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
-      return data;
+      return data ?? [];
     },
   });
+
+  const isLoading = loadingNotifs || loadingGates || loadingYard;
+  const hasError = errorNotifs || errorGates || errorYard;
 
   const gateAlerts = gateVerifications?.filter((g: any) => !g.latch_secure) || [];
   const openYardIssues = yardIssues?.filter((y: any) => !y.resolved) || [];
   const upsellNotifs = notifications?.filter((n: any) => n.type === "yard_watch_upsell") || [];
   const enRouteNotifs = notifications?.filter((n: any) => n.type === "en_route") || [];
+
+  if (isLoading) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-muted-foreground">Loading notifications...</CardContent>
+      </Card>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-destructive">
+          Failed to load notifications. Please refresh and try again.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
