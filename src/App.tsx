@@ -32,6 +32,12 @@ import TechMyJobs from "./pages/tech/MyJobs";
 import TechMyRoute from "./pages/tech/MyRoute";
 import TechProfile from "./pages/tech/Profile";
 
+// Billing pages
+import BillingLayout from "./pages/billing/BillingLayout";
+import PaymentMethods from "./pages/billing/PaymentMethods";
+import InvoiceHistory from "./pages/billing/InvoiceHistory";
+import Receipts from "./pages/billing/Receipts";
+
 const queryClient = new QueryClient();
 
 const AdminRoutes = () => (
@@ -86,6 +92,18 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard/billing/*"
+              element={
+                <ProtectedRoute>
+                  <BillingLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<PaymentMethods />} />
+              <Route path="invoices" element={<InvoiceHistory />} />
+              <Route path="receipts" element={<Receipts />} />
+            </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
