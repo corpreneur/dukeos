@@ -33,6 +33,7 @@ interface MockCustomer {
   id: string;
   user_id?: string;
   full_name: string;
+  email: string | null;
   phone: string | null;
   created_at: string;
   status: string;
@@ -105,7 +106,8 @@ function generateMockCustomers(realProfiles: any[]): MockCustomer[] {
       notes: seededRandom(i * 10 + ii + 995) > 0.5 ? "Reported during routine visit" : null,
     }));
 
-    mocks.push({ id: `mock-${i}`, full_name: `${first} ${last}`, phone, created_at: subDays(new Date(), daysAgo).toISOString(), status, dogs, isMock: true, addresses, subscriptions, jobs, yardIssues });
+    const email = `${first.toLowerCase()}.${last.toLowerCase()}${i}@example.com`;
+    mocks.push({ id: `mock-${i}`, full_name: `${first} ${last}`, email, phone, created_at: subDays(new Date(), daysAgo).toISOString(), status, dogs, isMock: true, addresses, subscriptions, jobs, yardIssues });
   }
   return mocks;
 }
@@ -186,6 +188,7 @@ const AdminCustomers = () => {
       }));
       return {
         ...p,
+        email: null, // real users don't expose email from profiles
         status: "active",
         dogs: subs.reduce((max: number, s: any) => Math.max(max, 1), 1),
         isMock: false,
@@ -202,7 +205,7 @@ const AdminCustomers = () => {
   const filtered = useMemo(() => {
     if (!search.trim()) return allCustomers;
     const q = search.toLowerCase();
-    return allCustomers.filter(c => c.full_name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q));
+    return allCustomers.filter(c => c.full_name?.toLowerCase().includes(q) || c.phone?.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q));
   }, [allCustomers, search]);
 
   const activeCount = allCustomers.filter(c => c.status === "active").length;
@@ -284,6 +287,7 @@ const AdminCustomers = () => {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
+              <TableHead className="hidden lg:table-cell">Email</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead className="hidden md:table-cell">Address</TableHead>
               <TableHead className="hidden md:table-cell">Plan</TableHead>
@@ -297,6 +301,7 @@ const AdminCustomers = () => {
             {filtered.map((p) => (
               <TableRow key={p.id} className="cursor-pointer hover:bg-muted/50" onClick={() => setSelected(p)}>
                 <TableCell className="font-medium">{p.full_name || "—"}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">{p.email || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.phone || "—"}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
                   {p.addresses.length > 0 ? `${p.addresses[0].street}, ${p.addresses[0].city}` : "—"}
