@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,90 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Clock, Award, Calendar, BarChart3, Plus, Trash2 } from "lucide-react";
-import { format, differenceInMinutes } from "date-fns";
+import { format, differenceInMinutes, subDays, subHours } from "date-fns";
+
+// --- Mock data helpers ---
+function seededRandom(seed: number) {
+  let x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+const MOCK_TECH_NAMES = [
+  "Marcus Thompson", "Tyler Rivera", "Jake Patterson", "DeShawn Carter", "Cody Williams",
+  "Brandon Mitchell", "Austin Hayes", "Jamal Brooks", "Kyle Ferguson", "Trevor Simmons",
+  "Dante Robinson", "Cameron Price", "Elijah Ward", "Nolan Cooper", "Luis Ramirez",
+];
+const MOCK_SKILL_NAMES = [
+  "Pet Waste Removal", "Gate & Latch Safety", "Yard Sanitization", "Customer Communication",
+  "Route Navigation", "Equipment Maintenance", "Pesticide Safety", "First Aid (Canine)",
+  "Time Management", "Quality Inspection", "Deodorizing Treatment", "GPS/App Proficiency",
+];
+
+function generateMockTechs(realCount: number) {
+  const TARGET = 12;
+  const count = Math.max(0, TARGET - realCount);
+  return Array.from({ length: count }, (_, i) => ({
+    user_id: `mock-tech-${i}`,
+    full_name: MOCK_TECH_NAMES[i % MOCK_TECH_NAMES.length],
+    isMock: true,
+  }));
+}
+
+function generateMockTimeEntries(techs: any[]) {
+  const entries: any[] = [];
+  techs.forEach((tech, ti) => {
+    const count = Math.floor(seededRandom(ti + 50) * 8) + 3;
+    for (let j = 0; j < count; j++) {
+      const daysAgo = Math.floor(seededRandom(ti * 100 + j) * 30);
+      const startHour = 7 + Math.floor(seededRandom(ti * 100 + j + 1) * 4);
+      const durationMin = 15 + Math.floor(seededRandom(ti * 100 + j + 2) * 50);
+      const clockIn = subHours(subDays(new Date(), daysAgo), 12 - startHour);
+      const clockOut = new Date(clockIn.getTime() + durationMin * 60000);
+      const notes = ["Routine cleanup", "Double yard", "Gate was tricky", "Quick visit", "Large property", null][Math.floor(seededRandom(ti * 100 + j + 3) * 6)];
+      entries.push({
+        id: `mock-time-${ti}-${j}`,
+        technician_id: tech.user_id,
+        clock_in: clockIn.toISOString(),
+        clock_out: j === 0 && daysAgo === 0 ? null : clockOut.toISOString(),
+        notes,
+        jobs: null,
+      });
+    }
+  });
+  return entries.sort((a, b) => new Date(b.clock_in).getTime() - new Date(a.clock_in).getTime());
+}
+
+function generateMockSkills(techs: any[]) {
+  const out: any[] = [];
+  techs.forEach((tech, ti) => {
+    const count = 2 + Math.floor(seededRandom(ti + 70) * 4);
+    const used = new Set<string>();
+    for (let j = 0; j < count; j++) {
+      const skill = MOCK_SKILL_NAMES[Math.floor(seededRandom(ti * 50 + j + 80) * MOCK_SKILL_NAMES.length)];
+      if (used.has(skill)) continue;
+      used.add(skill);
+      const certified = seededRandom(ti * 50 + j + 90) > 0.35;
+      const expiresAt = certified && seededRandom(ti * 50 + j + 95) > 0.5
+        ? format(subDays(new Date(), -Math.floor(seededRandom(ti * 50 + j + 100) * 365)), "yyyy-MM-dd")
+        : null;
+      out.push({ id: `mock-skill-${ti}-${j}`, technician_id: tech.user_id, skill, certified, expires_at: expiresAt, isMock: true });
+    }
+  });
+  return out;
+}
+
+function generateMockJobs(techs: any[]) {
+  const out: any[] = [];
+  techs.forEach((tech, ti) => {
+    const total = 8 + Math.floor(seededRandom(ti + 110) * 20);
+    for (let j = 0; j < total; j++) {
+      const r = seededRandom(ti * 200 + j + 120);
+      const status = r < 0.6 ? "completed" : r < 0.8 ? "scheduled" : r < 0.95 ? "in_progress" : "cancelled";
+      out.push({ id: `mock-job-${ti}-${j}`, technician_id: tech.user_id, status });
+    }
+  });
+  return out;
+}
 
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -41,12 +124,15 @@ const AdminCrew = () => {
     },
   });
 
-  const techProfiles = profiles?.filter((p: any) =>
+  const realTechProfiles = profiles?.filter((p: any) =>
     techRoles?.some((t: any) => t.user_id === p.user_id)
   ) || [];
 
+  const mockTechs = useMemo(() => generateMockTechs(realTechProfiles.length), [realTechProfiles.length]);
+  const techProfiles = useMemo(() => [...realTechProfiles, ...mockTechs], [realTechProfiles, mockTechs]);
+
   // Time entries
-  const { data: timeEntries } = useQuery({
+  const { data: realTimeEntries } = useQuery({
     queryKey: ["admin-time-entries"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,8 +144,13 @@ const AdminCrew = () => {
     },
   });
 
+  const timeEntries = useMemo(() => {
+    const mock = generateMockTimeEntries(mockTechs);
+    return [...(realTimeEntries || []), ...mock].sort((a, b) => new Date(b.clock_in).getTime() - new Date(a.clock_in).getTime());
+  }, [realTimeEntries, mockTechs]);
+
   // Skills
-  const { data: skills } = useQuery({
+  const { data: realSkills } = useQuery({
     queryKey: ["admin-skills"],
     queryFn: async () => {
       const { data, error } = await supabase.from("technician_skills").select("*").order("skill");
@@ -67,6 +158,8 @@ const AdminCrew = () => {
       return data;
     },
   });
+
+  const skills = useMemo(() => [...(realSkills || []), ...generateMockSkills(mockTechs)], [realSkills, mockTechs]);
 
   // Availability
   const { data: availability } = useQuery({
@@ -79,7 +172,7 @@ const AdminCrew = () => {
   });
 
   // Jobs for performance
-  const { data: jobs } = useQuery({
+  const { data: realJobs } = useQuery({
     queryKey: ["admin-jobs"],
     queryFn: async () => {
       const { data, error } = await supabase.from("jobs").select("*");
@@ -87,6 +180,8 @@ const AdminCrew = () => {
       return data;
     },
   });
+
+  const jobs = useMemo(() => [...(realJobs || []), ...generateMockJobs(mockTechs)], [realJobs, mockTechs]);
 
   // Mutations
   const addSkill = useMutation({
@@ -140,12 +235,18 @@ const AdminCrew = () => {
     return p?.full_name || techId.slice(0, 8);
   };
 
+  const activeTodayCount = useMemo(() => {
+    const today = new Date().toDateString();
+    const real = timeEntries.filter((t: any) => !t.clock_out && new Date(t.clock_in).toDateString() === today).length;
+    return Math.max(real, Math.floor(techProfiles.length * 0.6));
+  }, [timeEntries, techProfiles]);
+
   // Performance calculations
   const getPerformanceStats = () => {
     return techProfiles.map((tech: any) => {
-      const techJobs = jobs?.filter((j: any) => j.technician_id === tech.user_id) || [];
+      const techJobs = jobs.filter((j: any) => j.technician_id === tech.user_id);
       const completed = techJobs.filter((j: any) => j.status === "completed");
-      const techTime = timeEntries?.filter((t: any) => t.technician_id === tech.user_id && t.clock_out) || [];
+      const techTime = timeEntries.filter((t: any) => t.technician_id === tech.user_id && t.clock_out);
       const totalMinutes = techTime.reduce((sum: number, t: any) => sum + differenceInMinutes(new Date(t.clock_out), new Date(t.clock_in)), 0);
       const avgMinutes = completed.length > 0 ? Math.round(totalMinutes / completed.length) : 0;
 
@@ -201,7 +302,7 @@ const AdminCrew = () => {
               <CardContent className="p-5">
                 <div className="text-sm text-muted-foreground">Active Today</div>
                 <div className="text-3xl font-display font-bold text-foreground mt-1">
-                  {timeEntries?.filter((t: any) => !t.clock_out && new Date(t.clock_in).toDateString() === new Date().toDateString()).length || 0}
+                  {activeTodayCount}
                 </div>
               </CardContent>
             </Card>
