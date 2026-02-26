@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,6 +24,17 @@ const TechDashboard = () => {
   const [proofType, setProofType] = useState<"before" | "after">("before");
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // Realtime subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel("tech-jobs-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["tech-jobs"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["tech-jobs", user?.id],

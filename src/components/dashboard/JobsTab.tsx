@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +16,18 @@ const statusColors: Record<string, string> = {
 
 const JobsTab = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Realtime subscription for job updates
+  useEffect(() => {
+    const channel = supabase
+      .channel("customer-jobs-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, () => {
+        queryClient.invalidateQueries({ queryKey: ["customer-jobs"] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [queryClient]);
 
   const { data: jobs, isLoading } = useQuery({
     queryKey: ["customer-jobs", user?.id],
