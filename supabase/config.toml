@@ -1,1 +1,13 @@
 project_id = "dweoilvzcswhdyctstje"
+
+[functions.generate-recurring-jobs]
+verify_jwt = false
+
+[functions.density-score]
+verify_jwt = false
+
+[functions.yard-watch]
+verify_jwt = true
+
+[functions.verify-gate-photo]
+verify_jwt = true
