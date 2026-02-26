@@ -44,7 +44,9 @@ const RouteMap = ({ defaultCenter, positions, displayJobs, optimizedRoute, getTe
     if (!containerRef.current) return;
     if (mapRef.current) return; // already initialized
 
-    mapRef.current = L.map(containerRef.current).setView(defaultCenter, 11);
+    // Always initialize centered on DFW area
+    const DFW_CENTER: [number, number] = [33.10, -96.75];
+    mapRef.current = L.map(containerRef.current).setView(DFW_CENTER, 10);
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     }).addTo(mapRef.current);
