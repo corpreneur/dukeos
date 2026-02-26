@@ -37,6 +37,7 @@ import {
   Camera,
   User,
   HardHat,
+  Route,
 } from "lucide-react";
 
 const adminNav = [
@@ -46,6 +47,7 @@ const adminNav = [
   { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
   { title: "Crew", url: "/dashboard/crew", icon: HardHat },
+  { title: "Routes", url: "/dashboard/routes", icon: Route },
 ];
 
 const techNav = [
