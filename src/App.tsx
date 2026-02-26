@@ -22,6 +22,8 @@ import AdminRouteIntelligence from "./pages/admin/RouteIntelligence";
 import AdminCalendar from "./pages/admin/Calendar";
 import AdminNotifications from "./pages/admin/Notifications";
 import AdminPricing from "./pages/admin/Pricing";
+import AdminAddons from "./pages/admin/Addons";
+import AdminLeaderboard from "./pages/admin/Leaderboard";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -30,10 +32,6 @@ import TechProfile from "./pages/tech/Profile";
 
 const queryClient = new QueryClient();
 
-const StaffOS = () => (
-  <OSLayout />
-);
-
 const AdminRoutes = () => (
   <Routes>
     <Route element={<OSLayout />}>
@@ -41,6 +39,8 @@ const AdminRoutes = () => (
       <Route path="jobs" element={<AdminJobs />} />
       <Route path="customers" element={<AdminCustomers />} />
       <Route path="subscriptions" element={<AdminSubscriptions />} />
+      <Route path="addons" element={<AdminAddons />} />
+      <Route path="leaderboard" element={<AdminLeaderboard />} />
       <Route path="roles" element={<RoleManagementTab />} />
       <Route path="crew" element={<AdminCrew />} />
       <Route path="routes" element={<AdminRouteIntelligence />} />

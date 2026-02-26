@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { ChevronLeft, ChevronRight, GripVertical } from "lucide-react";
+import { ChevronLeft, ChevronRight, GripVertical, CloudRain, AlertTriangle, RefreshCw } from "lucide-react";
 import {
   format,
   startOfWeek,
@@ -41,6 +41,7 @@ const AdminCalendar = () => {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [dragJob, setDragJob] = useState<any>(null);
   const [rescheduleDialog, setRescheduleDialog] = useState<{ job: any; newDate: string } | null>(null);
+  const [checkingWeather, setCheckingWeather] = useState(false);
 
   const { data: jobs } = useQuery({
     queryKey: ["admin-jobs"],
@@ -73,6 +74,39 @@ const AdminCalendar = () => {
   });
 
   const [filterTech, setFilterTech] = useState<string>("all");
+
+  // Weather alerts
+  const { data: weatherAlerts } = useQuery({
+    queryKey: ["weather-alerts"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("weather_alerts")
+        .select("*")
+        .eq("dismissed", false)
+        .order("alert_date");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const checkWeather = async () => {
+    setCheckingWeather(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("weather-check");
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: ["weather-alerts"] });
+      toast.success(data?.message || "Weather check complete");
+    } catch (err: any) {
+      toast.error(err.message || "Weather check failed");
+    } finally {
+      setCheckingWeather(false);
+    }
+  };
+
+  const getAlertsForDay = (date: Date) => {
+    const dateStr = format(date, "yyyy-MM-dd");
+    return weatherAlerts?.filter((a: any) => a.alert_date === dateStr) || [];
+  };
 
   const techProfiles = useMemo(
     () => profiles?.filter((p: any) => techRoles?.some((t: any) => t.user_id === p.user_id)) || [],
@@ -173,6 +207,9 @@ const AdminCalendar = () => {
         </div>
         <span className="text-lg font-display font-semibold text-foreground">{headerLabel}</span>
         <div className="ml-auto flex gap-2">
+          <Button variant="outline" size="sm" className="gap-1" onClick={checkWeather} disabled={checkingWeather}>
+            <CloudRain className="h-4 w-4" /> {checkingWeather ? "Checking..." : "Weather Check"}
+          </Button>
           <Select value={filterTech} onValueChange={setFilterTech}>
             <SelectTrigger className="w-44">
               <SelectValue />
@@ -207,6 +244,27 @@ const AdminCalendar = () => {
         </div>
       </div>
 
+      {/* Weather Alerts Banner */}
+      {weatherAlerts && weatherAlerts.length > 0 && (
+        <div className="space-y-2">
+          {weatherAlerts.slice(0, 3).map((alert: any) => (
+            <div key={alert.id} className={`flex items-center gap-3 p-3 rounded-lg border ${
+              alert.severity === "severe" ? "bg-destructive/10 border-destructive/20" : "bg-warning/10 border-warning/20"
+            }`}>
+              <AlertTriangle className={`h-4 w-4 shrink-0 ${alert.severity === "severe" ? "text-destructive" : "text-warning"}`} />
+              <div className="flex-1 text-sm">
+                <span className="font-medium">{format(new Date(alert.alert_date + "T12:00:00"), "MMM d")}</span>
+                {alert.affected_zip && <span className="text-muted-foreground"> · ZIP {alert.affected_zip}</span>}
+                <span className="text-muted-foreground"> — {alert.description}</span>
+              </div>
+              <Badge variant="outline" className={alert.severity === "severe" ? "text-destructive" : "text-warning"}>
+                {alert.severity}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Calendar Grid */}
       <div className={`grid ${viewMode === "week" ? "grid-cols-7" : "grid-cols-7"} gap-px bg-border rounded-lg overflow-hidden border border-border`}>
         {/* Day headers */}
@@ -219,20 +277,23 @@ const AdminCalendar = () => {
         {/* Day cells */}
         {days.map((day) => {
           const dayJobs = getJobsForDay(day);
+          const dayAlerts = getAlertsForDay(day);
           const today = isToday(day);
           const currentMonth = isSameMonth(day, currentDate);
+          const hasWeatherAlert = dayAlerts.length > 0;
 
           return (
             <div
               key={day.toISOString()}
               className={`bg-card min-h-[100px] ${viewMode === "month" ? "min-h-[90px]" : "min-h-[140px]"} p-1.5 transition-colors ${
                 !currentMonth && viewMode === "month" ? "opacity-40" : ""
-              } ${today ? "ring-2 ring-inset ring-primary/30" : ""}`}
+              } ${today ? "ring-2 ring-inset ring-primary/30" : ""} ${hasWeatherAlert ? "bg-warning/5" : ""}`}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, day)}
             >
-              <div className={`text-xs font-medium mb-1 ${today ? "text-primary" : "text-muted-foreground"}`}>
+              <div className={`flex items-center gap-1 text-xs font-medium mb-1 ${today ? "text-primary" : "text-muted-foreground"}`}>
                 {format(day, viewMode === "month" ? "d" : "d MMM")}
+                {hasWeatherAlert && <CloudRain className="h-3 w-3 text-warning" />}
               </div>
               <div className="space-y-1">
                 {dayJobs.slice(0, viewMode === "month" ? 3 : 10).map((job: any) => (

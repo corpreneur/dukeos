@@ -1,18 +1,23 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User, Plus } from "lucide-react";
+import { Leaf, MapPin, CalendarDays, CreditCard, LogOut, Menu, X, User, Plus, Sparkles, FileText } from "lucide-react";
 import SubscriptionsTab from "@/components/dashboard/SubscriptionsTab";
 import AddressesTab from "@/components/dashboard/AddressesTab";
 import JobsTab from "@/components/dashboard/JobsTab";
 import ProfileTab from "@/components/dashboard/ProfileTab";
+import AddonsTab from "@/components/dashboard/AddonsTab";
+import YardHealthTab from "@/components/dashboard/YardHealthTab";
+import LiveETATracker from "@/components/dashboard/LiveETATracker";
 import BookingWizard from "@/components/booking/BookingWizard";
 import { cn } from "@/lib/utils";
 
 const tabs = [
   { id: "jobs", label: "Upcoming Jobs", icon: CalendarDays },
   { id: "book", label: "Book Service", icon: Plus },
+  { id: "addons", label: "Add-ons", icon: Sparkles },
   { id: "subscriptions", label: "Subscriptions", icon: CreditCard },
+  { id: "yard-health", label: "Yard Health", icon: FileText },
   { id: "addresses", label: "Addresses", icon: MapPin },
   { id: "profile", label: "Profile", icon: User },
 ] as const;
@@ -83,10 +88,15 @@ const Dashboard = () => {
         )}
       </header>
 
-      <main className="container px-4 py-8">
+      <main className="container px-4 py-8 space-y-6">
+        {/* Live ETA banner always visible when tech is en route */}
+        <LiveETATracker />
+
         {activeTab === "jobs" && <JobsTab />}
         {activeTab === "book" && <BookingWizard onComplete={() => setActiveTab("subscriptions")} />}
+        {activeTab === "addons" && <AddonsTab />}
         {activeTab === "subscriptions" && <SubscriptionsTab />}
+        {activeTab === "yard-health" && <YardHealthTab />}
         {activeTab === "addresses" && <AddressesTab />}
         {activeTab === "profile" && <ProfileTab />}
       </main>

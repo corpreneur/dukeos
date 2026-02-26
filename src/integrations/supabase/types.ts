@@ -14,6 +14,61 @@ export type Database = {
   }
   public: {
     Tables: {
+      addon_orders: {
+        Row: {
+          addon_id: string
+          created_at: string
+          customer_id: string
+          id: string
+          job_id: string | null
+          price_cents: number
+          status: string
+          subscription_id: string | null
+        }
+        Insert: {
+          addon_id: string
+          created_at?: string
+          customer_id: string
+          id?: string
+          job_id?: string | null
+          price_cents?: number
+          status?: string
+          subscription_id?: string | null
+        }
+        Update: {
+          addon_id?: string
+          created_at?: string
+          customer_id?: string
+          id?: string
+          job_id?: string | null
+          price_cents?: number
+          status?: string
+          subscription_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "addon_orders_addon_id_fkey"
+            columns: ["addon_id"]
+            isOneToOne: false
+            referencedRelation: "service_addons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addon_orders_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "addon_orders_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gate_verifications: {
         Row: {
           admin_alerted: boolean
@@ -229,6 +284,36 @@ export type Database = {
         }
         Relationships: []
       }
+      service_addons: {
+        Row: {
+          active: boolean
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          name: string
+          price_cents: number
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name: string
+          price_cents?: number
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          name?: string
+          price_cents?: number
+        }
+        Relationships: []
+      }
       service_addresses: {
         Row: {
           city: string
@@ -326,6 +411,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      tech_locations: {
+        Row: {
+          heading: number | null
+          id: string
+          lat: number
+          lng: number
+          speed: number | null
+          technician_id: string
+          updated_at: string
+        }
+        Insert: {
+          heading?: number | null
+          id?: string
+          lat: number
+          lng: number
+          speed?: number | null
+          technician_id: string
+          updated_at?: string
+        }
+        Update: {
+          heading?: number | null
+          id?: string
+          lat?: number
+          lng?: number
+          speed?: number | null
+          technician_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       technician_availability: {
         Row: {
@@ -437,6 +552,39 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      weather_alerts: {
+        Row: {
+          affected_zip: string | null
+          alert_date: string
+          auto_reschedule: boolean
+          created_at: string
+          description: string
+          dismissed: boolean
+          id: string
+          severity: string
+        }
+        Insert: {
+          affected_zip?: string | null
+          alert_date: string
+          auto_reschedule?: boolean
+          created_at?: string
+          description: string
+          dismissed?: boolean
+          id?: string
+          severity?: string
+        }
+        Update: {
+          affected_zip?: string | null
+          alert_date?: string
+          auto_reschedule?: boolean
+          created_at?: string
+          description?: string
+          dismissed?: boolean
+          id?: string
+          severity?: string
         }
         Relationships: []
       }

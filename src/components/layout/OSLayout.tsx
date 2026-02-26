@@ -41,6 +41,8 @@ import {
   Calendar,
   Bell,
   DollarSign,
+  Sparkles,
+  Trophy,
 } from "lucide-react";
 
 const adminNav = [
@@ -48,7 +50,9 @@ const adminNav = [
   { title: "Jobs", url: "/dashboard/jobs", icon: CalendarDays },
   { title: "Customers", url: "/dashboard/customers", icon: Users },
   { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
+  { title: "Add-ons", url: "/dashboard/addons", icon: Sparkles },
   { title: "Crew", url: "/dashboard/crew", icon: HardHat },
+  { title: "Leaderboard", url: "/dashboard/leaderboard", icon: Trophy },
   { title: "Routes", url: "/dashboard/routes", icon: Route },
   { title: "Calendar", url: "/dashboard/calendar", icon: Calendar },
   { title: "Pricing", url: "/dashboard/pricing", icon: DollarSign },

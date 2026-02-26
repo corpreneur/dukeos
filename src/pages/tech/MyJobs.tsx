@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Camera, Play, CheckCircle2, Navigation, Send } from "lucide-react";
+import { MapPin, Camera, Play, CheckCircle2, Navigation, Send, Radio } from "lucide-react";
 import YardWatchButton from "@/components/tech/YardWatchButton";
 import { format } from "date-fns";
 
@@ -24,7 +24,58 @@ const TechMyJobs = () => {
   const [proofType, setProofType] = useState<"before" | "after">("before");
   const [uploading, setUploading] = useState(false);
   const [notifyingEnRoute, setNotifyingEnRoute] = useState<string | null>(null);
+  const [trackingLocation, setTrackingLocation] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const watchIdRef = useRef<number | null>(null);
+
+  // Location tracking — broadcast position to tech_locations table
+  const startLocationTracking = useCallback(() => {
+    if (!user || trackingLocation) return;
+    if (!navigator.geolocation) {
+      toast.error("Geolocation not supported");
+      return;
+    }
+    setTrackingLocation(true);
+    toast.success("Live location tracking started");
+
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      async (pos) => {
+        try {
+          await supabase.from("tech_locations").upsert(
+            {
+              technician_id: user.id,
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+              heading: pos.coords.heading,
+              speed: pos.coords.speed,
+              updated_at: new Date().toISOString(),
+            },
+            { onConflict: "technician_id" }
+          );
+        } catch (e) {
+          console.error("Location update failed:", e);
+        }
+      },
+      (err) => console.error("Geolocation error:", err),
+      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
+    );
+  }, [user, trackingLocation]);
+
+  const stopLocationTracking = useCallback(() => {
+    if (watchIdRef.current !== null) {
+      navigator.geolocation.clearWatch(watchIdRef.current);
+      watchIdRef.current = null;
+    }
+    setTrackingLocation(false);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const channel = supabase
@@ -151,6 +202,22 @@ const TechMyJobs = () => {
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-display font-bold text-foreground">{scheduledJobs.length}</div><div className="text-xs text-muted-foreground">Scheduled</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-display font-bold text-warning">{inProgressJobs.length}</div><div className="text-xs text-muted-foreground">In Progress</div></CardContent></Card>
         <Card><CardContent className="p-3 text-center"><div className="text-2xl font-display font-bold text-success">{completedJobs.length}</div><div className="text-xs text-muted-foreground">Done</div></CardContent></Card>
+      </div>
+
+      {/* Location Tracking Toggle */}
+      <div className="flex items-center gap-3">
+        <Button
+          variant={trackingLocation ? "default" : "outline"}
+          size="sm"
+          className="gap-2"
+          onClick={trackingLocation ? stopLocationTracking : startLocationTracking}
+        >
+          <Radio className={`h-4 w-4 ${trackingLocation ? "animate-pulse" : ""}`} />
+          {trackingLocation ? "Tracking Live" : "Start Location Sharing"}
+        </Button>
+        {trackingLocation && (
+          <span className="text-xs text-muted-foreground">Customers can see your ETA</span>
+        )}
       </div>
 
       <h2 className="text-xl font-display font-bold text-foreground">My Jobs</h2>
