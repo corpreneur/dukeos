@@ -9,7 +9,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { MapPin, Navigation, Clock, RotateCcw, Truck, Loader2 } from "lucide-react";
 import { format } from "date-fns";
-import { statusColors } from "@/components/admin/RouteMap";
+
+const TECH_COLORS = [
+  "hsl(210, 80%, 55%)",  // blue
+  "hsl(340, 75%, 55%)",  // pink
+  "hsl(160, 70%, 40%)",  // teal
+  "hsl(30, 90%, 55%)",   // orange
+  "hsl(270, 65%, 55%)",  // purple
+  "hsl(50, 85%, 45%)",   // gold
+  "hsl(190, 75%, 45%)",  // cyan
+  "hsl(0, 70%, 55%)",    // red
+];
 
 const RouteMap = lazy(() => import("@/components/admin/RouteMap"));
 
@@ -99,6 +109,14 @@ const AdminRouteIntelligence = () => {
     () => filteredJobs.filter(hasValidCoordinates).map(normalizeJobRelations),
     [filteredJobs]
   );
+
+  // Build a stable tech → color map
+  const techColorMap = useMemo(() => {
+    const uniqueTechIds = [...new Set(geoJobs.map((j: any) => j.technician_id).filter(Boolean))];
+    const map: Record<string, string> = {};
+    uniqueTechIds.forEach((id, i) => { map[id] = TECH_COLORS[i % TECH_COLORS.length]; });
+    return map;
+  }, [geoJobs]);
 
   const positions = useMemo(
     () => geoJobs.map((j: any) => [Number(j.service_addresses.lat), Number(j.service_addresses.lng)] as [number, number]),
@@ -211,9 +229,21 @@ const AdminRouteIntelligence = () => {
                 displayJobs={displayJobs}
                 optimizedRoute={optimizedRoute}
                 getTechName={getTechName}
+                techColorMap={techColorMap}
               />
             </Suspense>
           </Card>
+          {/* Tech Legend */}
+          {Object.keys(techColorMap).length > 1 && (
+            <div className="flex flex-wrap gap-3 mt-2 px-1">
+              {Object.entries(techColorMap).map(([techId, color]) => (
+                <div key={techId} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span className="w-3 h-3 rounded-full shrink-0" style={{ background: color }} />
+                  {getTechName(techId)}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Stop List */}
@@ -230,7 +260,7 @@ const AdminRouteIntelligence = () => {
             )}
             {displayJobs.map((job: any, idx: number) => (
               <div key={job.id} className="flex items-start gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold shrink-0" style={{ background: statusColors[job.status] || "#666" }}>
+                <div className="flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold shrink-0" style={{ background: techColorMap[job.technician_id] || "#666" }}>
                   {idx + 1}
                 </div>
                 <div className="flex-1 min-w-0">

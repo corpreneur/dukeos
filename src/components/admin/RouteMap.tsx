@@ -34,9 +34,10 @@ interface RouteMapProps {
     geometry: [number, number][];
   } | null;
   getTechName: (id: string) => string;
+  techColorMap: Record<string, string>;
 }
 
-const RouteMap = ({ defaultCenter, positions, displayJobs, optimizedRoute, getTechName }: RouteMapProps) => {
+const RouteMap = ({ defaultCenter, positions, displayJobs, optimizedRoute, getTechName, techColorMap }: RouteMapProps) => {
   const mapRef = useRef<L.Map | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -73,7 +74,7 @@ const RouteMap = ({ defaultCenter, positions, displayJobs, optimizedRoute, getTe
     displayJobs.forEach((job: any, idx: number) => {
       const marker = L.marker(
         [Number(job.service_addresses.lat), Number(job.service_addresses.lng)],
-        { icon: createNumberedIcon(idx + 1, statusColors[job.status] || "#666") }
+        { icon: createNumberedIcon(idx + 1, techColorMap[job.technician_id] || statusColors[job.status] || "#666") }
       ).addTo(map);
 
       let popupHtml = `<div style="font-size:13px;">
@@ -104,7 +105,7 @@ const RouteMap = ({ defaultCenter, positions, displayJobs, optimizedRoute, getTe
       const bounds = L.latLngBounds(positions.map(([lat, lng]) => [lat, lng] as L.LatLngExpression));
       map.fitBounds(bounds, { padding: [50, 50] });
     }
-  }, [displayJobs, optimizedRoute, positions, getTechName]);
+  }, [displayJobs, optimizedRoute, positions, getTechName, techColorMap]);
 
   return <div ref={containerRef} style={{ height: 500, width: "100%" }} />;
 };
