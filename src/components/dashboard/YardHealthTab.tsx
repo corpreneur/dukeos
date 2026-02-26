@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-import { FileText, Loader2, Leaf, Bug, Camera, CheckCircle2 } from "lucide-react";
+import { FileText, Loader2, Leaf, Bug, Camera, CheckCircle2, Download } from "lucide-react";
+import { generateYardHealthPDF } from "@/lib/pdf-generators";
 
 const YardHealthTab = () => {
   const { user } = useAuth();
@@ -74,6 +75,28 @@ const YardHealthTab = () => {
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
               {loading ? "Analyzing..." : "Generate Report"}
             </Button>
+            {report && (
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() =>
+                  generateYardHealthPDF({
+                    address: report.address,
+                    plan: report.plan,
+                    frequency: report.frequency,
+                    numDogs: report.num_dogs,
+                    totalVisits: report.total_visits,
+                    proofPhotos: report.proof_photos,
+                    issuesFound: report.issues_found,
+                    issuesResolved: report.issues_resolved,
+                    aiAnalysis: report.ai_analysis,
+                    generatedAt: report.generated_at,
+                  })
+                }
+              >
+                <Download className="h-4 w-4" /> Download PDF
+              </Button>
+            )}
           </div>
 
           {!report && !loading && (
