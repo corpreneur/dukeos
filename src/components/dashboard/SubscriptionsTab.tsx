@@ -1,13 +1,27 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, MapPin } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CreditCard, MapPin, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import NewSubscriptionDialog from "@/components/dashboard/NewSubscriptionDialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const SubscriptionsTab = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   const { data: subscriptions, isLoading } = useQuery({
     queryKey: ["customer-subscriptions", user?.id],
@@ -16,11 +30,25 @@ const SubscriptionsTab = () => {
         .from("subscriptions")
         .select(`*, service_addresses (street, city, state, zip)`)
         .order("created_at", { ascending: false });
-
       if (error) throw error;
       return data;
     },
     enabled: !!user,
+  });
+
+  const cancelSub = useMutation({
+    mutationFn: async (subId: string) => {
+      const { error } = await supabase
+        .from("subscriptions")
+        .update({ active: false, cancelled_at: new Date().toISOString() })
+        .eq("id", subId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["customer-subscriptions"] });
+      toast.success("Subscription cancelled");
+    },
+    onError: (err: any) => toast.error(err.message),
   });
 
   if (isLoading) {
@@ -78,6 +106,34 @@ const SubscriptionsTab = () => {
                 <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2 border-t border-border">
                   <MapPin className="h-3.5 w-3.5" />
                   {sub.service_addresses.street}, {sub.service_addresses.city}
+                </div>
+              )}
+              {sub.active && (
+                <div className="pt-2 border-t border-border">
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="gap-1 text-destructive hover:text-destructive">
+                        <XCircle className="h-3.5 w-3.5" /> Cancel Subscription
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="font-display">Cancel Subscription?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will cancel your {sub.plan} plan ({sub.frequency} service). You won't be charged again, and any remaining scheduled jobs will be kept.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Keep Plan</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => cancelSub.mutate(sub.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Yes, Cancel
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </CardContent>
