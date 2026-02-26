@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,6 +36,30 @@ const statusColors: Record<string, string> = {
   cancelled: "hsl(0, 84%, 60%)",
 };
 
+const getAddress = (job: any) => {
+  const address = Array.isArray(job.service_addresses) ? job.service_addresses[0] : job.service_addresses;
+  return address ?? null;
+};
+
+const toCoordinate = (value: unknown) => {
+  const numeric = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+};
+
+const hasValidCoordinates = (job: any) => {
+  const address = getAddress(job);
+  const lat = toCoordinate(address?.lat);
+  const lng = toCoordinate(address?.lng);
+
+  return lat !== null && lng !== null && lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+};
+
+const normalizeJobRelations = (job: any) => ({
+  ...job,
+  service_addresses: getAddress(job),
+  subscriptions: Array.isArray(job.subscriptions) ? job.subscriptions[0] : job.subscriptions,
+});
+
 interface RouteResult {
   orderedJobs: any[];
   totalDistance: number; // meters
@@ -63,7 +87,7 @@ const AdminRouteIntelligence = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
 
   // Fetch jobs
-  const { data: jobs } = useQuery({
+  const { data: jobs, isLoading: jobsLoading, error: jobsError } = useQuery({
     queryKey: ["admin-jobs"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -76,7 +100,7 @@ const AdminRouteIntelligence = () => {
   });
 
   // Fetch technicians
-  const { data: techRoles } = useQuery({
+  const { data: techRoles, isLoading: techRolesLoading, error: techRolesError } = useQuery({
     queryKey: ["admin-technicians"],
     queryFn: async () => {
       const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "technician");
@@ -85,7 +109,7 @@ const AdminRouteIntelligence = () => {
     },
   });
 
-  const { data: profiles } = useQuery({
+  const { data: profiles, isLoading: profilesLoading, error: profilesError } = useQuery({
     queryKey: ["admin-profiles"],
     queryFn: async () => {
       const { data, error } = await supabase.from("profiles").select("*");
@@ -110,14 +134,14 @@ const AdminRouteIntelligence = () => {
     return filtered;
   }, [jobs, selectedDate, selectedTech]);
 
-  // Jobs that have coordinates
+  // Jobs that have valid coordinates
   const geoJobs = useMemo(
-    () => filteredJobs.filter((j: any) => j.service_addresses?.lat && j.service_addresses?.lng),
+    () => filteredJobs.filter(hasValidCoordinates).map(normalizeJobRelations),
     [filteredJobs]
   );
 
   const positions = useMemo(
-    () => geoJobs.map((j: any) => [j.service_addresses.lat, j.service_addresses.lng] as [number, number]),
+    () => geoJobs.map((j: any) => [Number(j.service_addresses.lat), Number(j.service_addresses.lng)] as [number, number]),
     [geoJobs]
   );
 
@@ -147,7 +171,7 @@ const AdminRouteIntelligence = () => {
     setIsOptimizing(true);
     try {
       const coords = geoJobs
-        .map((j: any) => `${j.service_addresses.lng},${j.service_addresses.lat}`)
+        .map((j: any) => `${Number(j.service_addresses.lng)},${Number(j.service_addresses.lat)}`)
         .join(";");
 
       const res = await fetch(
@@ -197,7 +221,7 @@ const AdminRouteIntelligence = () => {
   };
 
   const displayJobs = optimizedRoute ? optimizedRoute.orderedJobs : geoJobs;
-  const noGeoJobs = filteredJobs.filter((j: any) => !j.service_addresses?.lat || !j.service_addresses?.lng);
+  const noGeoJobs = filteredJobs.filter((j: any) => !hasValidCoordinates(j)).map(normalizeJobRelations);
 
   const defaultCenter: [number, number] = positions.length > 0
     ? [
@@ -205,6 +229,27 @@ const AdminRouteIntelligence = () => {
         positions.reduce((s, p) => s + p[1], 0) / positions.length,
       ]
     : [35.78, -78.64]; // Default to Raleigh, NC
+
+  const isLoadingData = jobsLoading || techRolesLoading || profilesLoading;
+  const hasDataError = !!jobsError || !!techRolesError || !!profilesError;
+
+  if (isLoadingData) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-muted-foreground">Loading route intelligence...</CardContent>
+      </Card>
+    );
+  }
+
+  if (hasDataError) {
+    return (
+      <Card>
+        <CardContent className="p-6 text-sm text-destructive">
+          Unable to load route intelligence data. Please refresh and try again.
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -320,7 +365,7 @@ const AdminRouteIntelligence = () => {
                         <div className="mt-1 text-xs">Plan: {job.subscriptions?.plan}</div>
                         <div className="text-xs">Tech: {getTechName(job.technician_id)}</div>
                         {optimizedRoute?.legs[idx] && (
-                          <div className="mt-1 text-xs text-gray-500">
+                          <div className="mt-1 text-xs text-muted-foreground">
                             → Next: {(optimizedRoute.legs[idx].distance / 1609.34).toFixed(1)} mi, {Math.round(optimizedRoute.legs[idx].duration / 60)} min
                           </div>
                         )}
