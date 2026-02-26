@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, MapPin } from "lucide-react";
+import NewSubscriptionDialog from "@/components/dashboard/NewSubscriptionDialog";
 
 const SubscriptionsTab = () => {
   const { user } = useAuth();
@@ -48,9 +49,12 @@ const SubscriptionsTab = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-display font-bold text-foreground">Subscriptions</h2>
-        <p className="text-muted-foreground text-sm mt-1">Manage your lawn care plans</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-display font-bold text-foreground">Subscriptions</h2>
+          <p className="text-muted-foreground text-sm mt-1">Manage your lawn care plans</p>
+        </div>
+        <NewSubscriptionDialog />
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
         {subscriptions.map((sub: any) => (
