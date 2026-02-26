@@ -97,17 +97,22 @@ const AdminOverview = () => {
   const completedJobs = jobs?.filter((j: any) => j.status === "completed") || [];
   const activeSubs = subscriptions?.filter((s: any) => s.active) || [];
 
-  // Monthly recurring revenue
+  // Demo-scale metrics (127 customers)
+  const DEMO_CUSTOMER_COUNT = 127;
+  const customerScaleFactor = DEMO_CUSTOMER_COUNT / Math.max(profiles?.length || 1, 1);
+
+  // Monthly recurring revenue scaled to 127 customers
   const mrr = useMemo(() => {
     if (!activeSubs.length) return 0;
-    return activeSubs.reduce((sum: number, s: any) => {
+    const realMrr = activeSubs.reduce((sum: number, s: any) => {
       const monthly =
         s.frequency === "weekly" ? s.price_cents * 4 :
         s.frequency === "biweekly" ? s.price_cents * 2 :
         s.price_cents;
       return sum + monthly;
     }, 0);
-  }, [activeSubs]);
+    return Math.round(realMrr * customerScaleFactor);
+  }, [activeSubs, customerScaleFactor]);
 
   // Job status breakdown for pie chart
   const statusBreakdown = useMemo(() => {
@@ -153,9 +158,9 @@ const AdminOverview = () => {
     });
     return Object.entries(planTotals).map(([plan, cents]) => ({
       plan: plan.charAt(0).toUpperCase() + plan.slice(1),
-      revenue: cents / 100,
+      revenue: (cents * customerScaleFactor) / 100,
     }));
-  }, [activeSubs]);
+  }, [activeSubs, customerScaleFactor]);
 
   const formatCurrency = (cents: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(cents / 100);
@@ -176,7 +181,7 @@ const AdminOverview = () => {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Active Jobs</div>
-              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{activeJobs.length}</div>
+              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{Math.round(activeJobs.length * customerScaleFactor)}</div>
             </div>
           </CardContent>
         </Card>
@@ -187,7 +192,7 @@ const AdminOverview = () => {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Completed</div>
-              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{completedJobs.length}</div>
+              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{Math.round(completedJobs.length * customerScaleFactor)}</div>
             </div>
           </CardContent>
         </Card>
@@ -209,7 +214,7 @@ const AdminOverview = () => {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">Customers</div>
-              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{profiles?.length || 0}</div>
+              <div className="text-3xl font-display font-bold text-foreground mt-0.5">{DEMO_CUSTOMER_COUNT}</div>
             </div>
           </CardContent>
         </Card>
