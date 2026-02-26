@@ -38,6 +38,7 @@ import {
   User,
   HardHat,
   Route,
+  Calendar,
 } from "lucide-react";
 
 const adminNav = [
@@ -48,10 +49,12 @@ const adminNav = [
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
   { title: "Crew", url: "/dashboard/crew", icon: HardHat },
   { title: "Routes", url: "/dashboard/routes", icon: Route },
+  { title: "Calendar", url: "/dashboard/calendar", icon: Calendar },
 ];
 
 const techNav = [
   { title: "My Jobs", url: "/dashboard", icon: CalendarDays, end: true },
+  { title: "My Route", url: "/dashboard/my-route", icon: Route },
   { title: "Profile", url: "/dashboard/profile", icon: User },
 ];
 
