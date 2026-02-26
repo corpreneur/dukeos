@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { Leaf, LogOut, MapPin, Camera, Play, CheckCircle2, Navigation } from "lucide-react";
 import { format } from "date-fns";
+import ClockInOutButton from "@/components/tech/ClockInOutButton";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 
 const statusColors: Record<string, string> = {
   scheduled: "bg-primary/10 text-primary border-primary/20",
@@ -130,6 +132,7 @@ const TechDashboard = () => {
             <span className="font-display font-bold text-foreground">DukeOS</span>
             <Badge variant="secondary" className="text-xs">Tech</Badge>
           </div>
+          <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={signOut}><LogOut className="h-4 w-4" /></Button>
         </div>
       </header>
@@ -197,6 +200,7 @@ const TechDashboard = () => {
                           <CheckCircle2 className="h-3.5 w-3.5" /> Complete
                         </Button>
                       )}
+                      <ClockInOutButton jobId={job.id} />
                     </div>
 
                     {/* Photo proofs */}

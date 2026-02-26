@@ -363,6 +363,7 @@ export type Database = {
         Row: {
           active: boolean
           address_id: string
+          cancellation_reason: string | null
           cancelled_at: string | null
           created_at: string
           customer_id: string
@@ -377,6 +378,7 @@ export type Database = {
         Insert: {
           active?: boolean
           address_id: string
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           customer_id: string
@@ -391,6 +393,7 @@ export type Database = {
         Update: {
           active?: boolean
           address_id?: string
+          cancellation_reason?: string | null
           cancelled_at?: string | null
           created_at?: string
           customer_id?: string
