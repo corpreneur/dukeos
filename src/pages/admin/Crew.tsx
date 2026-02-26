@@ -262,11 +262,62 @@ const AdminCrew = () => {
     });
   };
 
+  const [addTechOpen, setAddTechOpen] = useState(false);
+  const [techForm, setTechForm] = useState({ email: "", full_name: "", password: "" });
+  const [creatingTech, setCreatingTech] = useState(false);
+
+  const handleCreateTech = async () => {
+    setCreatingTech(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-technician", {
+        body: techForm,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Technician ${techForm.full_name} created!`);
+      setAddTechOpen(false);
+      setTechForm({ email: "", full_name: "", password: "" });
+      queryClient.invalidateQueries({ queryKey: ["admin-technicians"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-profiles"] });
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setCreatingTech(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-2xl font-display font-bold text-foreground">Crew Management</h2>
-        <p className="text-sm text-muted-foreground mt-1">Track time, skills, availability, and performance</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-display font-bold text-foreground">Crew Management</h2>
+          <p className="text-sm text-muted-foreground mt-1">Track time, skills, availability, and performance</p>
+        </div>
+        <Dialog open={addTechOpen} onOpenChange={setAddTechOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2"><Plus className="h-4 w-4" /> Add Technician</Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader><DialogTitle className="font-display">Add Technician</DialogTitle></DialogHeader>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Full Name</Label>
+                <Input value={techForm.full_name} onChange={(e) => setTechForm(p => ({ ...p, full_name: e.target.value }))} placeholder="John Smith" />
+              </div>
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input type="email" value={techForm.email} onChange={(e) => setTechForm(p => ({ ...p, email: e.target.value }))} placeholder="tech@scoopDuke.com" />
+              </div>
+              <div className="space-y-2">
+                <Label>Temporary Password</Label>
+                <Input type="password" value={techForm.password} onChange={(e) => setTechForm(p => ({ ...p, password: e.target.value }))} placeholder="Min 6 characters" />
+              </div>
+              <Button className="w-full" onClick={handleCreateTech} disabled={!techForm.email || !techForm.full_name || techForm.password.length < 6 || creatingTech}>
+                {creatingTech ? "Creating..." : "Create Technician Account"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <Tabs defaultValue="performance" className="space-y-4">

@@ -39,6 +39,8 @@ import {
   HardHat,
   Route,
   Calendar,
+  Bell,
+  DollarSign,
 } from "lucide-react";
 
 const adminNav = [
@@ -46,10 +48,12 @@ const adminNav = [
   { title: "Jobs", url: "/dashboard/jobs", icon: CalendarDays },
   { title: "Customers", url: "/dashboard/customers", icon: Users },
   { title: "Subscriptions", url: "/dashboard/subscriptions", icon: CreditCard },
-  { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
   { title: "Crew", url: "/dashboard/crew", icon: HardHat },
   { title: "Routes", url: "/dashboard/routes", icon: Route },
   { title: "Calendar", url: "/dashboard/calendar", icon: Calendar },
+  { title: "Pricing", url: "/dashboard/pricing", icon: DollarSign },
+  { title: "Notifications", url: "/dashboard/notifications", icon: Bell },
+  { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
 ];
 
 const techNav = [

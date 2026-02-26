@@ -20,6 +20,8 @@ import RoleManagementTab from "./components/admin/RoleManagementTab";
 import AdminCrew from "./pages/admin/Crew";
 import AdminRouteIntelligence from "./pages/admin/RouteIntelligence";
 import AdminCalendar from "./pages/admin/Calendar";
+import AdminNotifications from "./pages/admin/Notifications";
+import AdminPricing from "./pages/admin/Pricing";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -43,6 +45,8 @@ const AdminRoutes = () => (
       <Route path="crew" element={<AdminCrew />} />
       <Route path="routes" element={<AdminRouteIntelligence />} />
       <Route path="calendar" element={<AdminCalendar />} />
+      <Route path="notifications" element={<AdminNotifications />} />
+      <Route path="pricing" element={<AdminPricing />} />
     </Route>
   </Routes>
 );

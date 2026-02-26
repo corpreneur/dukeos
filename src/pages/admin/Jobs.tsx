@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Plus } from "lucide-react";
+import { Plus, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 
 const statusColors: Record<string, string> = {
@@ -23,6 +23,21 @@ const AdminJobs = () => {
   const queryClient = useQueryClient();
   const [newJobOpen, setNewJobOpen] = useState(false);
   const [newJobForm, setNewJobForm] = useState({ subscription_id: "", scheduled_date: "", technician_id: "" });
+
+  // Filters
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [filterTech, setFilterTech] = useState<string>("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+
+  const hasFilters = filterStatus !== "all" || filterTech !== "all" || filterDateFrom || filterDateTo;
+
+  const clearFilters = () => {
+    setFilterStatus("all");
+    setFilterTech("all");
+    setFilterDateFrom("");
+    setFilterDateTo("");
+  };
 
   useEffect(() => {
     const channel = supabase
@@ -83,6 +98,17 @@ const AdminJobs = () => {
     technicians?.some((t: any) => t.user_id === p.user_id)
   );
 
+  const filteredJobs = useMemo(() => {
+    if (!jobs) return [];
+    return jobs.filter((job: any) => {
+      if (filterStatus !== "all" && job.status !== filterStatus) return false;
+      if (filterTech !== "all" && job.technician_id !== filterTech) return false;
+      if (filterDateFrom && job.scheduled_date < filterDateFrom) return false;
+      if (filterDateTo && job.scheduled_date > filterDateTo) return false;
+      return true;
+    });
+  }, [jobs, filterStatus, filterTech, filterDateFrom, filterDateTo]);
+
   const createJob = useMutation({
     mutationFn: async () => {
       const sub = subscriptions?.find((s: any) => s.id === newJobForm.subscription_id);
@@ -131,7 +157,9 @@ const AdminJobs = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">All Jobs</h2>
-          <p className="text-muted-foreground text-sm mt-1">Schedule and manage jobs</p>
+          <p className="text-muted-foreground text-sm mt-1">
+            {filteredJobs.length} job{filteredJobs.length !== 1 ? "s" : ""}{hasFilters ? " (filtered)" : ""}
+          </p>
         </div>
         <Dialog open={newJobOpen} onOpenChange={setNewJobOpen}>
           <DialogTrigger asChild>
@@ -146,9 +174,7 @@ const AdminJobs = () => {
                   <SelectTrigger><SelectValue placeholder="Select subscription" /></SelectTrigger>
                   <SelectContent>
                     {subscriptions?.filter((s: any) => s.active).map((s: any) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.plan} — {s.service_addresses?.street}
-                      </SelectItem>
+                      <SelectItem key={s.id} value={s.id}>{s.plan} — {s.service_addresses?.street}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -163,9 +189,7 @@ const AdminJobs = () => {
                   <SelectTrigger><SelectValue placeholder="Unassigned" /></SelectTrigger>
                   <SelectContent>
                     {techProfiles?.map((t: any) => (
-                      <SelectItem key={t.user_id} value={t.user_id}>
-                        {t.full_name || t.user_id.slice(0, 8)}
-                      </SelectItem>
+                      <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.user_id.slice(0, 8)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -177,6 +201,52 @@ const AdminJobs = () => {
           </DialogContent>
         </Dialog>
       </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-end gap-3 p-4 rounded-lg border border-border bg-card">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Filter className="h-4 w-4" /> Filters
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Status</Label>
+          <Select value={filterStatus} onValueChange={setFilterStatus}>
+            <SelectTrigger className="h-8 w-36"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="scheduled">Scheduled</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="cancelled">Cancelled</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Technician</Label>
+          <Select value={filterTech} onValueChange={setFilterTech}>
+            <SelectTrigger className="h-8 w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Technicians</SelectItem>
+              {techProfiles?.map((t: any) => (
+                <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.user_id.slice(0, 8)}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">From</Label>
+          <Input type="date" className="h-8 w-36" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)} />
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">To</Label>
+          <Input type="date" className="h-8 w-36" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)} />
+        </div>
+        {hasFilters && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1">
+            <X className="h-3.5 w-3.5" /> Clear
+          </Button>
+        )}
+      </div>
+
       <div className="rounded-lg border border-border overflow-hidden">
         <Table>
           <TableHeader>
@@ -190,7 +260,7 @@ const AdminJobs = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {jobs?.map((job: any) => {
+            {filteredJobs.map((job: any) => {
               const techProfile = profiles?.find((p: any) => p.user_id === job.technician_id);
               return (
                 <TableRow key={job.id}>
@@ -198,18 +268,11 @@ const AdminJobs = () => {
                   <TableCell>{job.service_addresses?.street}, {job.service_addresses?.city}</TableCell>
                   <TableCell className="capitalize">{job.subscriptions?.plan}</TableCell>
                   <TableCell>
-                    <Select
-                      value={job.technician_id || ""}
-                      onValueChange={(v) => assignTechnician.mutate({ jobId: job.id, techId: v })}
-                    >
-                      <SelectTrigger className="h-8 w-36">
-                        <SelectValue placeholder="Assign" />
-                      </SelectTrigger>
+                    <Select value={job.technician_id || ""} onValueChange={(v) => assignTechnician.mutate({ jobId: job.id, techId: v })}>
+                      <SelectTrigger className="h-8 w-36"><SelectValue placeholder="Assign" /></SelectTrigger>
                       <SelectContent>
                         {techProfiles?.map((t: any) => (
-                          <SelectItem key={t.user_id} value={t.user_id}>
-                            {t.full_name || t.user_id.slice(0, 8)}
-                          </SelectItem>
+                          <SelectItem key={t.user_id} value={t.user_id}>{t.full_name || t.user_id.slice(0, 8)}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -218,13 +281,8 @@ const AdminJobs = () => {
                     <Badge variant="outline" className={statusColors[job.status] || ""}>{job.status.replace("_", " ")}</Badge>
                   </TableCell>
                   <TableCell>
-                    <Select
-                      value={job.status}
-                      onValueChange={(v) => updateJobStatus.mutate({ id: job.id, status: v })}
-                    >
-                      <SelectTrigger className="h-8 w-32">
-                        <SelectValue />
-                      </SelectTrigger>
+                    <Select value={job.status} onValueChange={(v) => updateJobStatus.mutate({ id: job.id, status: v })}>
+                      <SelectTrigger className="h-8 w-32"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="scheduled">Scheduled</SelectItem>
                         <SelectItem value="in_progress">In Progress</SelectItem>
@@ -236,6 +294,9 @@ const AdminJobs = () => {
                 </TableRow>
               );
             })}
+            {filteredJobs.length === 0 && (
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No jobs match filters</TableCell></TableRow>
+            )}
           </TableBody>
         </Table>
       </div>

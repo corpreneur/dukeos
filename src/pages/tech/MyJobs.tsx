@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { MapPin, Camera, Play, CheckCircle2, Navigation } from "lucide-react";
+import { MapPin, Camera, Play, CheckCircle2, Navigation, Send } from "lucide-react";
 import YardWatchButton from "@/components/tech/YardWatchButton";
 import { format } from "date-fns";
 
@@ -23,6 +23,7 @@ const TechMyJobs = () => {
   const [proofJobId, setProofJobId] = useState<string | null>(null);
   const [proofType, setProofType] = useState<"before" | "after">("before");
   const [uploading, setUploading] = useState(false);
+  const [notifyingEnRoute, setNotifyingEnRoute] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -73,6 +74,21 @@ const TechMyJobs = () => {
     onError: (err: any) => toast.error(err.message),
   });
 
+  const notifyEnRoute = async (jobId: string) => {
+    setNotifyingEnRoute(jobId);
+    try {
+      const { data, error } = await supabase.functions.invoke("notify-en-route", {
+        body: { job_id: jobId },
+      });
+      if (error) throw error;
+      toast.success(data?.message || "Customer notified!");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send notification");
+    } finally {
+      setNotifyingEnRoute(null);
+    }
+  };
+
   const handleUploadProof = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !proofJobId || !user) return;
@@ -90,28 +106,21 @@ const TechMyJobs = () => {
       queryClient.invalidateQueries({ queryKey: ["tech-proofs"] });
       toast.success(`${proofType} photo uploaded`);
 
-      // Trigger AI gate verification for "after" photos
       if (proofType === "after" && proofData) {
         toast.info("🔍 Running gate verification...");
         try {
           const verifyResult = await supabase.functions.invoke("verify-gate-photo", {
-            body: {
-              job_proof_id: proofData.id,
-              job_id: proofJobId,
-              image_url: urlData.publicUrl,
-            },
+            body: { job_proof_id: proofData.id, job_id: proofJobId, image_url: urlData.publicUrl },
           });
           if (verifyResult.data?.verification?.latch_secure) {
             toast.success("✅ Gate verified — latch is secure!");
           } else {
-            toast.warning("⚠️ Gate check flagged — admin has been notified. Please verify the gate is latched.", { duration: 8000 });
+            toast.warning("⚠️ Gate check flagged — admin notified. Please verify gate is latched.", { duration: 8000 });
           }
         } catch {
-          // Gate verification is non-blocking
           console.error("Gate verification failed silently");
         }
       }
-
       setProofJobId(null);
     } catch (err: any) {
       toast.error(err.message);
@@ -147,9 +156,7 @@ const TechMyJobs = () => {
       <h2 className="text-xl font-display font-bold text-foreground">My Jobs</h2>
 
       {isLoading ? (
-        <div className="space-y-3">
-          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />)}
-        </div>
+        <div className="space-y-3">{[1, 2, 3].map(i => <div key={i} className="h-32 bg-muted animate-pulse rounded-lg" />)}</div>
       ) : !todayJobs.length ? (
         <Card className="border-dashed">
           <CardContent className="py-12 text-center">
@@ -184,6 +191,11 @@ const TechMyJobs = () => {
                     {job.service_addresses && (
                       <Button variant="outline" size="sm" className="gap-1" onClick={() => openNavigation(job.service_addresses)}>
                         <Navigation className="h-3.5 w-3.5" /> Navigate
+                      </Button>
+                    )}
+                    {job.status === "scheduled" && (
+                      <Button variant="outline" size="sm" className="gap-1" onClick={() => notifyEnRoute(job.id)} disabled={notifyingEnRoute === job.id}>
+                        <Send className="h-3.5 w-3.5" /> {notifyingEnRoute === job.id ? "Sending..." : "En Route"}
                       </Button>
                     )}
                     {(job.status === "in_progress" || job.status === "scheduled") && (
