@@ -27,6 +27,8 @@ import AdminAddons from "./pages/admin/Addons";
 import AdminLeaderboard from "./pages/admin/Leaderboard";
 import AdminReports from "./pages/admin/Reports";
 import AdminOrganization from "./pages/admin/Organization";
+import AdminGBP from "./pages/admin/GBPIntegration";
+import Quote from "./pages/Quote";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -58,6 +60,7 @@ const AdminRoutes = () => (
       <Route path="pricing" element={<AdminPricing />} />
       <Route path="reports" element={<AdminReports />} />
       <Route path="organization" element={<AdminOrganization />} />
+      <Route path="gbp" element={<AdminGBP />} />
     </Route>
   </Routes>
 );
@@ -82,6 +85,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Navigate to="/auth" replace />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/quote" element={<Quote />} />
             <Route
               path="/dashboard/*"
               element={

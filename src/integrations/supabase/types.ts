@@ -123,6 +123,62 @@ export type Database = {
           },
         ]
       }
+      gbp_integrations: {
+        Row: {
+          access_token: string | null
+          admin_user_id: string
+          auto_review_request: boolean
+          created_at: string
+          gbp_account_name: string | null
+          gbp_location_id: string
+          id: string
+          is_active: boolean
+          org_id: string | null
+          refresh_token: string | null
+          review_request_delay_hours: number
+          review_request_template: string | null
+          updated_at: string
+        }
+        Insert: {
+          access_token?: string | null
+          admin_user_id: string
+          auto_review_request?: boolean
+          created_at?: string
+          gbp_account_name?: string | null
+          gbp_location_id: string
+          id?: string
+          is_active?: boolean
+          org_id?: string | null
+          refresh_token?: string | null
+          review_request_delay_hours?: number
+          review_request_template?: string | null
+          updated_at?: string
+        }
+        Update: {
+          access_token?: string | null
+          admin_user_id?: string
+          auto_review_request?: boolean
+          created_at?: string
+          gbp_account_name?: string | null
+          gbp_location_id?: string
+          id?: string
+          is_active?: boolean
+          org_id?: string | null
+          refresh_token?: string | null
+          review_request_delay_hours?: number
+          review_request_template?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gbp_integrations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_proofs: {
         Row: {
           created_at: string
@@ -359,6 +415,47 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_tiers: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          max_value: number
+          min_value: number
+          org_id: string | null
+          surcharge_cents: number
+          tier_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          max_value?: number
+          min_value?: number
+          org_id?: string | null
+          surcharge_cents?: number
+          tier_type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          max_value?: number
+          min_value?: number
+          org_id?: string | null
+          surcharge_cents?: number
+          tier_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_tiers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -416,6 +513,53 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          comment: string | null
+          created_at: string
+          gbp_integration_id: string
+          id: string
+          reply: string | null
+          review_date: string
+          review_id: string
+          reviewer_name: string | null
+          star_rating: number
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          gbp_integration_id: string
+          id?: string
+          reply?: string | null
+          review_date?: string
+          review_id: string
+          reviewer_name?: string | null
+          star_rating: number
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          gbp_integration_id?: string
+          id?: string
+          reply?: string | null
+          review_date?: string
+          review_id?: string
+          reviewer_name?: string | null
+          star_rating?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_gbp_integration_id_fkey"
+            columns: ["gbp_integration_id"]
+            isOneToOne: false
+            referencedRelation: "gbp_integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       service_addons: {
         Row: {
           active: boolean
@@ -460,6 +604,7 @@ export type Database = {
           state: string
           street: string
           updated_at: string
+          yard_size_sqft: number | null
           zip: string
         }
         Insert: {
@@ -475,6 +620,7 @@ export type Database = {
           state?: string
           street: string
           updated_at?: string
+          yard_size_sqft?: number | null
           zip: string
         }
         Update: {
@@ -490,11 +636,50 @@ export type Database = {
           state?: string
           street?: string
           updated_at?: string
+          yard_size_sqft?: number | null
           zip?: string
         }
         Relationships: [
           {
             foreignKeyName: "service_addresses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      service_areas: {
+        Row: {
+          active: boolean
+          city: string | null
+          created_at: string
+          id: string
+          org_id: string | null
+          state: string | null
+          zip_code: string
+        }
+        Insert: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string | null
+          state?: string | null
+          zip_code: string
+        }
+        Update: {
+          active?: boolean
+          city?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string | null
+          state?: string | null
+          zip_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "service_areas_org_id_fkey"
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
