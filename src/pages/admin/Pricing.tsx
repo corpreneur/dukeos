@@ -6,7 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { DollarSign, Save, MapPin } from "lucide-react";
+import { DollarSign, Save, MapPin, Ruler } from "lucide-react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PricingTier {
   zone: string;
@@ -136,7 +138,88 @@ const AdminPricing = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Yard Size Pricing Tiers */}
+      <YardSizePricingTiers />
     </div>
+  );
+};
+
+const YardSizePricingTiers = () => {
+  const queryClient = useQueryClient();
+
+  const { data: yardTiers } = useQuery({
+    queryKey: ["pricing-tiers-yard"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pricing_tiers")
+        .select("*")
+        .eq("tier_type", "yard_size")
+        .order("min_value", { ascending: true });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const updateTier = useMutation({
+    mutationFn: async ({ id, surcharge_cents }: { id: string; surcharge_cents: number }) => {
+      const { error } = await supabase
+        .from("pricing_tiers")
+        .update({ surcharge_cents })
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["pricing-tiers-yard"] });
+      toast.success("Yard size tier updated");
+    },
+  });
+
+  if (!yardTiers || yardTiers.length === 0) return null;
+
+  return (
+    <>
+      <Separator className="my-4" />
+      <div>
+        <h3 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
+          <Ruler className="h-5 w-5 text-muted-foreground" /> Yard Size Pricing Tiers
+        </h3>
+        <p className="text-sm text-muted-foreground mt-1">
+          Surcharges applied based on measured yard square footage (via Geospatial Quoting tool)
+        </p>
+      </div>
+      <div className="space-y-3">
+        {yardTiers.map((tier: any) => (
+          <Card key={tier.id}>
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <span className="font-medium text-foreground">{tier.label}</span>
+                <span className="text-sm text-muted-foreground ml-2">
+                  ({tier.min_value.toLocaleString()} – {tier.max_value >= 99999 ? "∞" : tier.max_value.toLocaleString()} sq ft)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Surcharge:</span>
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    defaultValue={(tier.surcharge_cents / 100).toFixed(2)}
+                    onBlur={e => {
+                      const cents = Math.round(parseFloat(e.target.value) * 100) || 0;
+                      if (cents !== tier.surcharge_cents) updateTier.mutate({ id: tier.id, surcharge_cents: cents });
+                    }}
+                    className="w-24 h-8"
+                  />
+                </div>
+                <span className="text-xs text-muted-foreground">/visit</span>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </>
   );
 };
 

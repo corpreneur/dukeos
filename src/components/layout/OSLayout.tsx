@@ -45,6 +45,7 @@ import {
   Trophy,
   BarChart3,
   Building2,
+  Star,
 } from "lucide-react";
 import { ReleaseTracker } from "@/components/layout/ReleaseTracker";
 import ThemeToggle from "@/components/layout/ThemeToggle";
@@ -66,6 +67,7 @@ const adminNav = [
   { title: "Notifications", url: "/dashboard/notifications", icon: Bell },
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
   { title: "Organization", url: "/dashboard/organization", icon: Building2 },
+  { title: "GBP Reviews", url: "/dashboard/gbp", icon: Star },
 ];
 
 const techNav = [

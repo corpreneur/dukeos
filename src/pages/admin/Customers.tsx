@@ -10,7 +10,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Search, MapPin, CreditCard, Briefcase, AlertTriangle, Dog, Calendar, ChevronRight, Plus } from "lucide-react";
+import { Search, MapPin, CreditCard, Briefcase, AlertTriangle, Dog, Calendar, ChevronRight, Plus, Ruler } from "lucide-react";
+import YardMeasurement from "@/components/admin/YardMeasurement";
 import { format, subDays } from "date-fns";
 import { toast } from "sonner";
 
@@ -39,7 +40,7 @@ interface MockCustomer {
   status: string;
   dogs: number;
   isMock: boolean;
-  addresses: { street: string; city: string; state: string; zip: string; label: string }[];
+  addresses: { id?: string; street: string; city: string; state: string; zip: string; label: string; lat?: number | null; lng?: number | null; yard_size_sqft?: number | null }[];
   subscriptions: { plan: string; frequency: string; price_cents: number; active: boolean; started_at: string }[];
   jobs: { scheduled_date: string; status: string }[];
   yardIssues: { issue_type: string; resolved: boolean; created_at: string; notes: string | null }[];
@@ -189,7 +190,7 @@ const AdminCustomers = () => {
       .filter((p: any) => !techUserIds.has(p.user_id))
       .map((p: any) => {
       const addrs = (realAddresses || []).filter((a: any) => a.customer_id === p.user_id).map((a: any) => ({
-        street: a.street, city: a.city, state: a.state, zip: a.zip, label: a.label,
+        id: a.id, street: a.street, city: a.city, state: a.state, zip: a.zip, label: a.label, lat: a.lat, lng: a.lng, yard_size_sqft: a.yard_size_sqft,
       }));
       const subs = (realSubscriptions || []).filter((s: any) => s.customer_id === p.user_id).map((s: any) => ({
         plan: s.plan, frequency: s.frequency, price_cents: s.price_cents, active: s.active, started_at: s.started_at,
@@ -497,6 +498,19 @@ const AdminCustomers = () => {
                     </div>
                   )}
                 </div>
+
+                {/* Yard Measurement */}
+                {!selected.isMock && selected.addresses.length > 0 && selected.addresses[0]?.id && (
+                  <>
+                    <Separator />
+                    <YardMeasurement
+                      addressId={selected.addresses[0].id}
+                      lat={selected.addresses[0].lat}
+                      lng={selected.addresses[0].lng}
+                      savedSqft={selected.addresses[0].yard_size_sqft}
+                    />
+                  </>
+                )}
 
                 {/* Yard Issues */}
                 {selected.yardIssues.length > 0 && (
