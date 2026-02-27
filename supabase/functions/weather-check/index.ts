@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     // Get unique addresses with coordinates for upcoming jobs
     const { data: upcomingJobs } = await supabase
       .from("jobs")
-      .select("id, scheduled_date, subscription_id, service_addresses(lat, lng, zip, street, city)")
+      .select("id, scheduled_date, subscription_id, address_id, service_addresses!inner(lat, lng, zip, street, city)")
       .eq("status", "scheduled")
       .gte("scheduled_date", new Date().toISOString().split("T")[0]);
 
@@ -30,8 +30,9 @@ Deno.serve(async (req) => {
     // Get unique coords (deduplicate by zip)
     const zipCoords: Record<string, { lat: number; lng: number }> = {};
     upcomingJobs.forEach((j: any) => {
-      if (j.service_addresses?.lat && j.service_addresses?.zip) {
-        zipCoords[j.service_addresses.zip] = { lat: j.service_addresses.lat, lng: j.service_addresses.lng };
+      const addr = Array.isArray(j.service_addresses) ? j.service_addresses[0] : j.service_addresses;
+      if (addr?.lat && addr?.zip) {
+        zipCoords[addr.zip] = { lat: addr.lat, lng: addr.lng };
       }
     });
 
@@ -101,13 +102,13 @@ Deno.serve(async (req) => {
     const rescheduledDetails: any[] = [];
 
     for (const [alertDate, affectedZips] of Object.entries(severeAlertDates)) {
-      const affectedJobs = upcomingJobs.filter((j: any) =>
-        j.scheduled_date === alertDate &&
-        j.service_addresses?.zip &&
-        affectedZips.has(j.service_addresses.zip)
-      );
+      const affectedJobs = upcomingJobs.filter((j: any) => {
+        const addr = Array.isArray(j.service_addresses) ? j.service_addresses[0] : j.service_addresses;
+        return j.scheduled_date === alertDate && addr?.zip && affectedZips.has(addr.zip);
+      });
 
       for (const job of affectedJobs) {
+        const addr = Array.isArray(job.service_addresses) ? job.service_addresses[0] : job.service_addresses;
         // Find next clear day (try +1, +2, +3 days)
         const originalDate = new Date(alertDate + "T12:00:00");
         let newDate: string | null = null;
@@ -117,8 +118,7 @@ Deno.serve(async (req) => {
           candidate.setDate(candidate.getDate() + offset);
           const candidateStr = candidate.toISOString().split("T")[0];
           
-          // Check if this date also has severe weather
-          if (!severeAlertDates[candidateStr]?.has(job.service_addresses.zip)) {
+          if (!severeAlertDates[candidateStr]?.has(addr?.zip)) {
             newDate = candidateStr;
             break;
           }
@@ -139,10 +139,9 @@ Deno.serve(async (req) => {
               job_id: job.id,
               from: alertDate,
               to: newDate,
-              zip: job.service_addresses.zip,
+              zip: addr?.zip,
             });
 
-            // Notify customer
             const { data: sub } = await supabase
               .from("subscriptions")
               .select("customer_id")
@@ -154,7 +153,7 @@ Deno.serve(async (req) => {
                 user_id: sub.customer_id,
                 type: "weather_reschedule",
                 title: "Visit Rescheduled — Weather",
-                body: `Your visit at ${job.service_addresses.street} on ${alertDate} has been moved to ${newDate} due to severe weather.`,
+                body: `Your visit at ${addr?.street || 'your property'} on ${alertDate} has been moved to ${newDate} due to severe weather.`,
                 channel: "sms",
                 metadata: { job_id: job.id, original_date: alertDate, new_date: newDate },
               });
