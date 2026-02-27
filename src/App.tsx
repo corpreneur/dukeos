@@ -26,6 +26,7 @@ import AdminPricing from "./pages/admin/Pricing";
 import AdminAddons from "./pages/admin/Addons";
 import AdminLeaderboard from "./pages/admin/Leaderboard";
 import AdminReports from "./pages/admin/Reports";
+import AdminOrganization from "./pages/admin/Organization";
 
 // Tech pages
 import TechMyJobs from "./pages/tech/MyJobs";
@@ -56,6 +57,7 @@ const AdminRoutes = () => (
       <Route path="notifications" element={<AdminNotifications />} />
       <Route path="pricing" element={<AdminPricing />} />
       <Route path="reports" element={<AdminReports />} />
+      <Route path="organization" element={<AdminOrganization />} />
     </Route>
   </Routes>
 );

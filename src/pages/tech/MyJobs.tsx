@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { MapPin, Camera, Play, CheckCircle2, Navigation, Send, Radio } from "lucide-react";
 import YardWatchButton from "@/components/tech/YardWatchButton";
+import { useOfflineSync } from "@/hooks/useOfflineSync";
 import { format } from "date-fns";
 
 const statusColors: Record<string, string> = {
@@ -27,6 +28,7 @@ const TechMyJobs = () => {
   const [trackingLocation, setTrackingLocation] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const watchIdRef = useRef<number | null>(null);
+  const { isOnline, startJobOffline, completeJobOffline } = useOfflineSync();
 
   // Location tracking — broadcast position to tech_locations table
   const startLocationTracking = useCallback(() => {
@@ -269,12 +271,18 @@ const TechMyJobs = () => {
                       <YardWatchButton jobId={job.id} />
                     )}
                     {job.status === "scheduled" && (
-                      <Button size="sm" className="gap-1" onClick={() => updateStatus.mutate({ id: job.id, status: "in_progress" })}>
+                      <Button size="sm" className="gap-1" onClick={() => {
+                        if (isOnline) updateStatus.mutate({ id: job.id, status: "in_progress" });
+                        else startJobOffline(job.id);
+                      }}>
                         <Play className="h-3.5 w-3.5" /> Start Job
                       </Button>
                     )}
                     {job.status === "in_progress" && (
-                      <Button size="sm" className="gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => updateStatus.mutate({ id: job.id, status: "completed" })}>
+                      <Button size="sm" className="gap-1 bg-success hover:bg-success/90 text-success-foreground" onClick={() => {
+                        if (isOnline) updateStatus.mutate({ id: job.id, status: "completed" });
+                        else completeJobOffline(job.id);
+                      }}>
                         <CheckCircle2 className="h-3.5 w-3.5" /> Complete
                       </Button>
                     )}

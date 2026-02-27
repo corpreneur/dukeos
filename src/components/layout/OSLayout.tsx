@@ -44,9 +44,12 @@ import {
   Sparkles,
   Trophy,
   BarChart3,
+  Building2,
 } from "lucide-react";
 import { ReleaseTracker } from "@/components/layout/ReleaseTracker";
 import ThemeToggle from "@/components/layout/ThemeToggle";
+import OfflineIndicator from "@/components/tech/OfflineIndicator";
+import PushNotificationToggle from "@/components/tech/PushNotificationToggle";
 
 const adminNav = [
   { title: "Overview", url: "/dashboard", icon: Briefcase, end: true },
@@ -62,6 +65,7 @@ const adminNav = [
   { title: "Reports", url: "/dashboard/reports", icon: BarChart3 },
   { title: "Notifications", url: "/dashboard/notifications", icon: Bell },
   { title: "Roles", url: "/dashboard/roles", icon: ShieldCheck },
+  { title: "Organization", url: "/dashboard/organization", icon: Building2 },
 ];
 
 const techNav = [
@@ -188,7 +192,9 @@ const OSLayout = () => {
             <SidebarTrigger />
             <div className="h-5 w-px bg-border" />
             <OSBreadcrumbs />
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <OfflineIndicator />
+              <PushNotificationToggle />
               <ThemeToggle />
             </div>
           </header>
