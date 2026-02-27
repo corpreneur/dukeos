@@ -198,6 +198,9 @@ const OSLayout = () => {
               <OfflineIndicator />
               <PushNotificationToggle />
               <ThemeToggle />
+              <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-mono text-muted-foreground border-border/60">
+                v1.0.2
+              </Badge>
             </div>
           </header>
           <div className="flex-1 p-6 overflow-auto">
