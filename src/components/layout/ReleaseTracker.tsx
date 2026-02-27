@@ -31,6 +31,7 @@ const typeConfig: Record<ReleaseType, { icon: typeof Sparkles; label: string; cl
 ──────────────────────────────────────────────────────────────*/
 const releases: ReleaseItem[] = [
   // ── Sprint 3 / PRD 3.0 ───────────────────────────────
+  { id: "r00", title: "Release tracker v1.0.2 publish", description: "Bumped release version to v1.0.2. Hover detail cards confirmed working in production after publish.", type: "improvement", date: new Date("2026-02-27"), version: "1.0.2" },
   { id: "r0a", title: "Hover detail cards on releases", description: "Release line-items now show a rich hover card with full description, type badge, version, and date. Works on hover and click for mobile.", type: "improvement", date: new Date("2026-02-27"), version: "1.0.1" },
   { id: "r0b", title: "GBP Reviews dashboard", description: "Admins can view Google Business Profile reviews, star ratings, and configure automatic review-request emails after completed jobs.", type: "feature", date: new Date("2026-02-27"), version: "1.0.0" },
   { id: "r0c", title: "Public booking widget", description: "Customers can get an instant quote, pick a plan, and sign up from a standalone /quote page. ZIP-code validated against service areas.", type: "feature", date: new Date("2026-02-27") },
