@@ -5,12 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from "date-fns";
+import { format, subDays, differenceInHours } from "date-fns";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  LineChart, Line, Legend,
+  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  Legend,
 } from "recharts";
-import { Download, FileText, TrendingUp, DollarSign, Users, Briefcase } from "lucide-react";
+import { Download, FileText, TrendingUp, DollarSign, Users, Briefcase, Route, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 const RANGES = [
@@ -34,6 +34,17 @@ function downloadCsv(filename: string, csv: string) {
   URL.revokeObjectURL(url);
 }
 
+// Haversine distance in miles
+function haversine(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 3959;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 const AdminReports = () => {
   const [range, setRange] = useState("30d");
   const days = RANGES.find((r) => r.id === range)!.days;
@@ -44,7 +55,7 @@ const AdminReports = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("jobs")
-        .select("*, service_addresses(street, city, zip), subscriptions(plan, price_cents, customer_id, frequency)")
+        .select("*, service_addresses(street, city, zip, lat, lng), subscriptions(plan, price_cents, customer_id, frequency)")
         .order("scheduled_date", { ascending: true });
       if (error) throw error;
       return data;
@@ -106,6 +117,60 @@ const AdminReports = () => {
   const totalRevenue = revenueByDay.reduce((s, d) => s + d.revenue, 0);
   const activeSubs = subscriptions?.filter((s: any) => s.active).length || 0;
 
+  // RPT-01: Route Efficiency Metrics
+  const routeMetrics = useMemo(() => {
+    const completed = filteredJobs.filter((j: any) => j.status === "completed");
+    if (completed.length < 2) return { revenuePerMile: 0, stopsPerHour: 0, totalMiles: 0 };
+
+    // Group completed jobs by date + technician to compute daily route distances
+    const routeGroups: Record<string, any[]> = {};
+    completed.forEach((j: any) => {
+      const key = `${j.scheduled_date}_${j.technician_id || "unassigned"}`;
+      if (!routeGroups[key]) routeGroups[key] = [];
+      routeGroups[key].push(j);
+    });
+
+    let totalMiles = 0;
+    let totalDriveHours = 0;
+    let totalStops = 0;
+
+    Object.values(routeGroups).forEach((group) => {
+      const withCoords = group.filter((j: any) => {
+        const addr = Array.isArray(j.service_addresses) ? j.service_addresses[0] : j.service_addresses;
+        return addr?.lat && addr?.lng;
+      });
+      if (withCoords.length < 2) {
+        totalStops += group.length;
+        // Estimate 3 miles between stops when no coords
+        totalMiles += Math.max(0, group.length - 1) * 3;
+        totalDriveHours += group.length * 0.25; // est 15 min per stop
+        return;
+      }
+
+      totalStops += withCoords.length;
+      for (let i = 1; i < withCoords.length; i++) {
+        const prev = Array.isArray(withCoords[i - 1].service_addresses) ? withCoords[i - 1].service_addresses[0] : withCoords[i - 1].service_addresses;
+        const curr = Array.isArray(withCoords[i].service_addresses) ? withCoords[i].service_addresses[0] : withCoords[i].service_addresses;
+        totalMiles += haversine(prev.lat, prev.lng, curr.lat, curr.lng);
+      }
+
+      // Estimate drive hours from started_at/completed_at
+      const withTimes = withCoords.filter((j: any) => j.started_at && j.completed_at);
+      if (withTimes.length > 0) {
+        const earliest = new Date(Math.min(...withTimes.map((j: any) => new Date(j.started_at).getTime())));
+        const latest = new Date(Math.max(...withTimes.map((j: any) => new Date(j.completed_at).getTime())));
+        totalDriveHours += differenceInHours(latest, earliest) || 1;
+      } else {
+        totalDriveHours += withCoords.length * 0.25;
+      }
+    });
+
+    const revenuePerMile = totalMiles > 0 ? totalRevenue / totalMiles : 0;
+    const stopsPerHour = totalDriveHours > 0 ? totalStops / totalDriveHours : 0;
+
+    return { revenuePerMile, stopsPerHour, totalMiles };
+  }, [filteredJobs, totalRevenue]);
+
   // CSV exports
   const exportJobs = () => {
     if (!filteredJobs.length) return toast.error("No jobs to export");
@@ -157,7 +222,7 @@ const AdminReports = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Reports</h2>
-          <p className="text-sm text-muted-foreground mt-1">Revenue analytics and data exports</p>
+          <p className="text-sm text-muted-foreground mt-1">Revenue analytics, route efficiency, and data exports</p>
         </div>
         <Select value={range} onValueChange={setRange}>
           <SelectTrigger className="w-40">
@@ -171,7 +236,7 @@ const AdminReports = () => {
         </Select>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards - Row 1: Core Metrics */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardContent className="p-5 flex items-start gap-4">
@@ -216,6 +281,61 @@ const AdminReports = () => {
             <div>
               <div className="text-sm text-muted-foreground">Active Subscriptions</div>
               <div className="text-3xl font-display font-bold text-foreground">{activeSubs}</div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* KPI Cards - Row 2: Route Efficiency (RPT-01) */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-5 flex items-start gap-4">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <DollarSign className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Revenue per Mile</div>
+              <div className="text-3xl font-display font-bold text-foreground">
+                ${routeMetrics.revenuePerMile.toFixed(2)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {routeMetrics.totalMiles.toFixed(0)} total miles driven
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-5 flex items-start gap-4">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <Clock className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Stops per Hour</div>
+              <div className="text-3xl font-display font-bold text-foreground">
+                {routeMetrics.stopsPerHour.toFixed(1)}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {completedJobs} completed stops
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-primary/20 bg-primary/5">
+          <CardContent className="p-5 flex items-start gap-4">
+            <div className="rounded-lg bg-primary/10 p-2.5">
+              <Route className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Avg Miles per Route</div>
+              <div className="text-3xl font-display font-bold text-foreground">
+                {(() => {
+                  const uniqueDays = new Set(filteredJobs.filter((j: any) => j.status === "completed").map((j: any) => `${j.scheduled_date}_${j.technician_id}`));
+                  return uniqueDays.size > 0 ? (routeMetrics.totalMiles / uniqueDays.size).toFixed(1) : "0";
+                })()}
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                across {new Set(filteredJobs.filter((j: any) => j.status === "completed").map((j: any) => `${j.scheduled_date}_${j.technician_id}`)).size} routes
+              </div>
             </div>
           </CardContent>
         </Card>

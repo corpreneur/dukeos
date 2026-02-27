@@ -249,6 +249,38 @@ const AdminCustomers = () => {
     },
     onError: (err: any) => toast.error(err.message),
   });
+  const handlePauseSubscription = async (customer: MockCustomer, subIndex: number) => {
+    if (customer.isMock) return toast.error("Cannot modify mock data");
+    // Find real subscription ID
+    const realSubs = (realSubscriptions || []).filter((s: any) => s.customer_id === customer.user_id);
+    const sub = realSubs[subIndex];
+    if (!sub) return toast.error("Subscription not found");
+    
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ active: false, cancellation_reason: "Paused by admin" })
+      .eq("id", sub.id);
+    if (error) return toast.error(error.message);
+    queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+    toast.success("Subscription paused");
+    setSelected(null);
+  };
+
+  const handleCancelSubscription = async (customer: MockCustomer, subIndex: number) => {
+    if (customer.isMock) return toast.error("Cannot modify mock data");
+    const realSubs = (realSubscriptions || []).filter((s: any) => s.customer_id === customer.user_id);
+    const sub = realSubs[subIndex];
+    if (!sub) return toast.error("Subscription not found");
+    
+    const { error } = await supabase
+      .from("subscriptions")
+      .update({ active: false, cancelled_at: new Date().toISOString(), cancellation_reason: "Cancelled by admin" })
+      .eq("id", sub.id);
+    if (error) return toast.error(error.message);
+    queryClient.invalidateQueries({ queryKey: ["admin-subscriptions"] });
+    toast.success("Subscription cancelled");
+    setSelected(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -411,6 +443,26 @@ const AdminCustomers = () => {
                               <Badge variant={sub.active ? "default" : "secondary"} className="text-xs">{sub.active ? "Active" : "Cancelled"}</Badge>
                             </div>
                           </div>
+                          {sub.active && !selected.isMock && (
+                            <div className="flex gap-2 mt-3 pt-2 border-t border-border">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="flex-1 text-xs"
+                                onClick={() => handlePauseSubscription(selected, i)}
+                              >
+                                Pause
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                className="flex-1 text-xs"
+                                onClick={() => handleCancelSubscription(selected, i)}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))

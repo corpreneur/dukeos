@@ -10,8 +10,8 @@ import { differenceInMinutes } from "date-fns";
 const BADGES_CONFIG = [
   { id: "speed_demon", name: "Speed Demon", icon: Zap, color: "text-amber-500", desc: "Avg < 20 min/job", check: (s: any) => s.avgMinutes > 0 && s.avgMinutes < 20 },
   { id: "completionist", name: "Completionist", icon: Target, color: "text-success", desc: "95%+ completion rate", check: (s: any) => s.totalJobs > 5 && s.completionRate >= 95 },
-  { id: "workhorse", name: "Workhorse", icon: Flame, color: "text-destructive", desc: "25+ jobs completed", check: (s: any) => s.completed >= 25 },
-  { id: "perfectionist", name: "Perfectionist", icon: Star, color: "text-primary", desc: "Zero cancellations", check: (s: any) => s.totalJobs > 5 && s.cancelled === 0 },
+  { id: "workhorse", name: "Workhorse", icon: Flame, color: "text-destructive", desc: "50+ jobs completed", check: (s: any) => s.completed >= 50 },
+  { id: "perfectionist", name: "Perfectionist", icon: Star, color: "text-primary", desc: "Zero cancellations", check: (s: any) => s.totalJobs > 10 && s.cancelled === 0 },
   { id: "reliable", name: "Reliable", icon: Award, color: "text-violet-500", desc: "100+ hours logged", check: (s: any) => s.totalHours >= 100 },
 ];
 
