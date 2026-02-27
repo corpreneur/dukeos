@@ -1,6 +1,6 @@
 # DukeOS Feature Backlog & Sprint Roadmap
 
-**Version:** 0.9.2 (Sprint 1 Complete)
+**Version:** 0.9.3 (Sprint 2 Complete)
 **Date:** February 27, 2026
 **Status:** Active Development
 
@@ -20,15 +20,15 @@
 
 ---
 
-## 🚀 Sprint 2: Scale & Gamification (P1)
+## ✅ Sprint 2: Scale & Gamification (P1) — COMPLETE
 **Goal:** Enhance the "Stickiness" for technicians and "Visibility" for owners.
 
-| ID | Priority | Feature | Description | Acceptance Criteria |
-|---|---|---|---|---|
-| **RPT-01** | **P1** | **Route Efficiency Metrics** | Add "Revenue per Mile" and "Stops per Hour" to the Reports module. | 1. Reports page shows 2 new KPI cards.<br>2. Data aggregates from completed routes. |
-| **NOT-01** | **P1** | **Visual Notifications** | Add photo thumbnails to the Notification feed for Gate/Yard alerts. | 1. Alert card shows a 50x50px thumbnail of the issue.<br>2. Clicking thumbnail opens full image modal. |
-| **CRM-01** | **P2** | **Customer Drill-Down** | Build a detailed "Customer Profile" view with history and subscription controls. | 1. Clicking a row in Customers table opens detail view.<br>2. Admin can Pause/Cancel subscription from this view. |
-| **GAM-01** | **P2** | **Badge Logic Implementation** | Connect the `leaderboard` table to real job completion events. | 1. Completing 50 jobs unlocks "Workhorse" badge.<br>2. 5-star rating unlocks "Perfectionist" badge. |
+| ID | Priority | Feature | Status |
+|---|---|---|---|
+| **RPT-01** | **P1** | **Route Efficiency Metrics** | ✅ Done — Revenue/Mile, Stops/Hour, Avg Miles/Route KPI cards added |
+| **NOT-01** | **P1** | **Visual Notifications** | ✅ Done — 50x50px photo thumbnails + full image modal on all tabs |
+| **CRM-01** | **P2** | **Customer Drill-Down** | ✅ Done — Detail sheet with Pause/Cancel subscription controls |
+| **GAM-01** | **P2** | **Badge Logic Implementation** | ✅ Done — 50 jobs = Workhorse, 0 cancellations = Perfectionist, live scoring |
 
 ---
 

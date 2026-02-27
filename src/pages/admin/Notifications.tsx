@@ -5,10 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, AlertTriangle, ShieldAlert, TrendingUp } from "lucide-react";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Bell, AlertTriangle, ShieldAlert, TrendingUp, ImageIcon, X } from "lucide-react";
 import { format } from "date-fns";
 
 const AdminNotifications = () => {
+  const [imageModal, setImageModal] = useState<string | null>(null);
+
   const { data: notifications, isLoading: loadingNotifs, error: errorNotifs } = useQuery({
     queryKey: ["admin-notifications"],
     queryFn: async () => {
@@ -27,7 +30,7 @@ const AdminNotifications = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("gate_verifications")
-        .select("*")
+        .select("*, job_proofs(image_url)")
         .order("created_at", { ascending: false })
         .limit(100);
       if (error) throw error;
@@ -53,8 +56,24 @@ const AdminNotifications = () => {
 
   const gateAlerts = gateVerifications?.filter((g: any) => !g.latch_secure) || [];
   const openYardIssues = yardIssues?.filter((y: any) => !y.resolved) || [];
-  const upsellNotifs = notifications?.filter((n: any) => n.type === "yard_watch_upsell") || [];
+  const upsellNotifs = notifications?.filter((n: any) => n.type === "yard_watch_upsell" || n.type === "sms_upsell") || [];
   const enRouteNotifs = notifications?.filter((n: any) => n.type === "en_route") || [];
+
+  // Helper to get photo from notification metadata
+  const getPhotoUrl = (n: any): string | null => {
+    const meta = n.metadata as Record<string, any> | null;
+    return meta?.photo_url || meta?.image_url || null;
+  };
+
+  // Thumbnail component
+  const PhotoThumb = ({ url, onClick }: { url: string; onClick: () => void }) => (
+    <button
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className="w-[50px] h-[50px] rounded-md overflow-hidden border border-border hover:ring-2 hover:ring-primary/50 transition-all shrink-0"
+    >
+      <img src={url} alt="Alert photo" className="w-full h-full object-cover" />
+    </button>
+  );
 
   if (isLoading) {
     return (
@@ -142,6 +161,7 @@ const AdminNotifications = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16">Photo</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Gate Detected</TableHead>
                       <TableHead>Latch Secure</TableHead>
@@ -150,29 +170,41 @@ const AdminNotifications = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {gateVerifications?.map((g: any) => (
-                      <TableRow key={g.id}>
-                        <TableCell>{format(new Date(g.created_at), "MMM d, h:mm a")}</TableCell>
-                        <TableCell>
-                          <Badge variant={g.gate_detected ? "default" : "destructive"}>
-                            {g.gate_detected ? "Yes" : "No"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={g.latch_secure ? "default" : "destructive"}>
-                            {g.latch_secure ? "Secure" : "Unsecure"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{g.confidence_score ? `${(g.confidence_score * 100).toFixed(0)}%` : "—"}</TableCell>
-                        <TableCell>
-                          <Badge variant={g.admin_alerted ? "secondary" : "outline"}>
-                            {g.admin_alerted ? "Alerted" : "OK"}
-                          </Badge>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {gateVerifications?.map((g: any) => {
+                      const proofUrl = Array.isArray(g.job_proofs) ? g.job_proofs[0]?.image_url : g.job_proofs?.image_url;
+                      return (
+                        <TableRow key={g.id}>
+                          <TableCell>
+                            {proofUrl ? (
+                              <PhotoThumb url={proofUrl} onClick={() => setImageModal(proofUrl)} />
+                            ) : (
+                              <div className="w-[50px] h-[50px] rounded-md bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>{format(new Date(g.created_at), "MMM d, h:mm a")}</TableCell>
+                          <TableCell>
+                            <Badge variant={g.gate_detected ? "default" : "destructive"}>
+                              {g.gate_detected ? "Yes" : "No"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={g.latch_secure ? "default" : "destructive"}>
+                              {g.latch_secure ? "Secure" : "Unsecure"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{g.confidence_score ? `${(g.confidence_score * 100).toFixed(0)}%` : "—"}</TableCell>
+                          <TableCell>
+                            <Badge variant={g.admin_alerted ? "secondary" : "outline"}>
+                              {g.admin_alerted ? "Alerted" : "OK"}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {!gateVerifications?.length && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No gate verifications yet</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No gate verifications yet</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -188,6 +220,7 @@ const AdminNotifications = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16">Photo</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Issue Type</TableHead>
                       <TableHead>Notes</TableHead>
@@ -197,6 +230,15 @@ const AdminNotifications = () => {
                   <TableBody>
                     {yardIssues?.map((y: any) => (
                       <TableRow key={y.id}>
+                        <TableCell>
+                          {y.photo_url ? (
+                            <PhotoThumb url={y.photo_url} onClick={() => setImageModal(y.photo_url)} />
+                          ) : (
+                            <div className="w-[50px] h-[50px] rounded-md bg-muted flex items-center justify-center">
+                              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </TableCell>
                         <TableCell>{format(new Date(y.created_at), "MMM d, yyyy")}</TableCell>
                         <TableCell className="capitalize font-medium">{y.issue_type.replace(/_/g, " ")}</TableCell>
                         <TableCell className="text-muted-foreground text-sm">{y.notes || "—"}</TableCell>
@@ -208,7 +250,7 @@ const AdminNotifications = () => {
                       </TableRow>
                     ))}
                     {!yardIssues?.length && (
-                      <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">No yard issues reported</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No yard issues reported</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -224,6 +266,7 @@ const AdminNotifications = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-16">Photo</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Type</TableHead>
                       <TableHead>Title</TableHead>
@@ -232,19 +275,31 @@ const AdminNotifications = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {notifications?.map((n: any) => (
-                      <TableRow key={n.id}>
-                        <TableCell>{format(new Date(n.created_at), "MMM d, h:mm a")}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="capitalize text-xs">{n.type.replace(/_/g, " ")}</Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{n.title || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{n.body}</TableCell>
-                        <TableCell className="uppercase text-xs text-muted-foreground">{n.channel}</TableCell>
-                      </TableRow>
-                    ))}
+                    {notifications?.map((n: any) => {
+                      const photoUrl = getPhotoUrl(n);
+                      return (
+                        <TableRow key={n.id}>
+                          <TableCell>
+                            {photoUrl ? (
+                              <PhotoThumb url={photoUrl} onClick={() => setImageModal(photoUrl)} />
+                            ) : (
+                              <div className="w-[50px] h-[50px] rounded-md bg-muted flex items-center justify-center">
+                                <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell>{format(new Date(n.created_at), "MMM d, h:mm a")}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="capitalize text-xs">{n.type.replace(/_/g, " ")}</Badge>
+                          </TableCell>
+                          <TableCell className="font-medium">{n.title || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground text-sm max-w-xs truncate">{n.body}</TableCell>
+                          <TableCell className="uppercase text-xs text-muted-foreground">{n.channel}</TableCell>
+                        </TableRow>
+                      );
+                    })}
                     {!notifications?.length && (
-                      <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No notifications yet</TableCell></TableRow>
+                      <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No notifications yet</TableCell></TableRow>
                     )}
                   </TableBody>
                 </Table>
@@ -253,6 +308,15 @@ const AdminNotifications = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Full Image Modal */}
+      <Dialog open={!!imageModal} onOpenChange={() => setImageModal(null)}>
+        <DialogContent className="max-w-3xl p-2">
+          {imageModal && (
+            <img src={imageModal} alt="Full size alert photo" className="w-full h-auto rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
