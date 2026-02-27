@@ -1,6 +1,6 @@
 # DukeOS Feature Backlog & Sprint Roadmap
 
-**Version:** 2.0 (Growth Engine Update)
+**Version:** 3.0 (Geospatial Quoting Update)
 **Date:** February 26, 2026
 **Status:** Active Development
 
@@ -17,13 +17,14 @@
 
 ---
 
-## 🚀 Sprint 2: Marketing Automation & AI Vision (P1)
-**Goal:** Automate marketing tasks and activate the core AI-powered visual analysis features.
+## 🚀 Sprint 2: Marketing Automation & AI-Assisted Quoting (P1)
+**Goal:** Automate marketing, activate AI vision, and introduce professional-grade quoting tools.
 
 | ID | Priority | Feature | Description | Acceptance Criteria |
 |---|---|---|---|---|
-| **GRO-02** | **P1** | **Google Business Profile Sync** | Integrate with GBP API to automate review requests and pull in performance data. | 1. Admin can connect their GBP account via OAuth.<br>2. System auto-sends review requests 24hrs after job completion.<br>3. Dashboard widget displays GBP reviews and key metrics (views, clicks, calls). |
-| **AI-02** | **P1** | **Connect Yard Watch Vision** | Integrate the `yard-watch` edge function with a computer vision model to identify upsell opportunities. | 1. Uploading a service photo triggers the edge function.<br>2. AI returns relevant tags (e.g., "Long Grass", "Weeds").<br>3. UI suggests appropriate upsell service to admin/customer. |
+| **GRO-02** | **P1** | **Google Business Profile Sync** | Integrate with GBP API to automate review requests and pull in performance data. | 1. Admin can connect their GBP account via OAuth.<br>2. System auto-sends review requests 24hrs after job completion.<br>3. Dashboard widget displays GBP reviews and key metrics. |
+| **GRO-03** | **P1** | **Geospatial Quoting Tool** | An interactive map tool for admins to measure serviceable yard area and generate precise quotes. | 1. Admin can draw a polygon on a satellite map of a property.<br>2. The tool calculates and saves the square footage.<br>3. Yard size becomes a variable in the dynamic pricing engine. |
+| **AI-02** | **P1** | **Connect Yard Watch Vision** | Integrate the `yard-watch` edge function with a computer vision model to identify upsell opportunities. | 1. Uploading a service photo triggers the edge function.<br>2. AI returns relevant tags (e.g., "Long Grass", "Weeds").<br>3. UI suggests appropriate upsell service. |
 | **AI-03** | **P1** | **Connect Gate Detection** | Integrate the `detect-gate` edge function with a computer vision model to verify property security. | 1. Uploading a departure photo triggers analysis.<br>2. AI returns "Secure" or "Unsafe" status with a confidence score.<br>3. UI shows a Green/Red badge on the job record. |
 
 ---
