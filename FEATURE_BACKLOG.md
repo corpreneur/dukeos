@@ -1,21 +1,22 @@
 # DukeOS Feature Backlog & Sprint Roadmap
 
-**Version:** 0.9.1 (Audit Baseline)
-**Date:** February 26, 2026
+**Version:** 0.9.2 (Sprint 1 Complete)
+**Date:** February 27, 2026
 **Status:** Active Development
 
 ---
 
-## 🚨 Sprint 1: Critical Fixes & AI Core (P0)
+## ✅ Sprint 1: Critical Fixes & AI Core (P0) — COMPLETE
 **Goal:** Restore broken functionality and connect the "Brain" (AI Logic) to the "Body" (UI).
 
-| ID | Priority | Feature | Description | Acceptance Criteria |
-|---|---|---|---|---|
-| **REG-01** | **P0** | **Restore Add-ons Page** | The `/dashboard/add-ons` route renders a blank white screen. This breaks the upsell workflow. | 1. Page loads with service catalog.<br>2. "Add New Service" button works.<br>3. Technicians can see these items in their app. |
-| **AI-01** | **P0** | **Wire Route Optimization** | Connect the "Optimize Route" button to OSRM or Mapbox API via Edge Function. | 1. Clicking "Optimize" reorders the stop list.<br>2. Total Distance/Time updates with real values.<br>3. Map draws a polyline connecting stops. |
-| **AI-02** | **P1** | **Connect Yard Watch Vision** | Integrate the `yard-watch` edge function with OpenAI Vision API. | 1. Uploading a photo triggers the edge function.<br>2. AI returns "Long Grass" or "Clean" tag.<br>3. UI suggests "Mowing Upsell" if tag is "Long Grass". |
-| **AI-03** | **P1** | **Connect Gate Detection** | Integrate the `detect-gate` edge function with OpenAI Vision API. | 1. Uploading a photo triggers analysis.<br>2. AI returns "Secure" or "Unsafe" confidence score.<br>3. UI shows Green/Red badge based on score. |
-| **UX-01** | **P2** | **Technician Filter** | Exclude users with `role: technician` from the Customers list view. | 1. Customers page only shows homeowners.<br>2. Crew page only shows technicians. |
+| ID | Priority | Feature | Status |
+|---|---|---|---|
+| **REG-01** | **P0** | **Restore Add-ons Page** | ✅ Done — Tab renders service catalog with ordering |
+| **AI-01** | **P0** | **Wire Route Optimization** | ✅ Done — OSRM Trip API connected, polyline drawn, distance/time live |
+| **AI-02** | **P1** | **Connect Yard Watch Vision** | ✅ Done — Gemini Flash via Lovable AI gateway, auto-detect + upsell SMS |
+| **AI-03** | **P1** | **Connect Gate Detection** | ✅ Done — Gemini Flash via Lovable AI gateway, admin alerts on failure |
+| **UX-01** | **P2** | **Technician Filter** | ✅ Done — Customers page excludes technician-role users |
+| **BUILD** | **P0** | **Fix Edge Function Type Errors** | ✅ Done — All 9 TS errors resolved |
 
 ---
 
@@ -42,7 +43,7 @@
 ---
 
 ## 📉 Known Issues / Bugs
-- **BUG-001:** "Optimize Route" button shows placeholder dashes.
-- **BUG-002:** Notifications page loader spins indefinitely on first load (fixed in v0.9.1, verify regression).
+- ~~**BUG-001:** "Optimize Route" button shows placeholder dashes.~~ ✅ Fixed — OSRM connected
+- ~~**BUG-002:** Notifications page loader spins indefinitely on first load.~~ ✅ Fixed in v0.9.1
 - **BUG-003:** Map pins sometimes overlap in high-density clusters.
-- **BUG-004:** Login screen copy says "Lawn Care" instead of "Pet Services".
+- ~~**BUG-004:** Login screen copy says "Lawn Care" instead of "Pet Services".~~ ✅ Fixed — says "pet services"

@@ -72,9 +72,9 @@ serve(async (req) => {
       success: true,
       message: `Notification sent to ${customerProfile?.full_name || "customer"}`,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (e) {
+  } catch (e: any) {
     console.error("notify-en-route error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

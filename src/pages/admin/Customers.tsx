@@ -135,6 +135,18 @@ const AdminCustomers = () => {
     },
   });
 
+  // Fetch technician role user IDs to exclude them from customer list
+  const { data: techRoles } = useQuery({
+    queryKey: ["admin-technicians"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("user_roles").select("user_id").eq("role", "technician");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const techUserIds = useMemo(() => new Set((techRoles || []).map((t: any) => t.user_id)), [techRoles]);
+
   // For real customers, fetch their related data
   const { data: realAddresses } = useQuery({
     queryKey: ["admin-addresses"],
@@ -173,7 +185,9 @@ const AdminCustomers = () => {
   });
 
   const allCustomers = useMemo(() => {
-    const real: MockCustomer[] = (profiles || []).map((p: any) => {
+    const real: MockCustomer[] = (profiles || [])
+      .filter((p: any) => !techUserIds.has(p.user_id))
+      .map((p: any) => {
       const addrs = (realAddresses || []).filter((a: any) => a.customer_id === p.user_id).map((a: any) => ({
         street: a.street, city: a.city, state: a.state, zip: a.zip, label: a.label,
       }));
@@ -200,7 +214,7 @@ const AdminCustomers = () => {
     });
     const mocks = generateMockCustomers(real);
     return [...real, ...mocks].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  }, [profiles, realAddresses, realSubscriptions, realJobs, realYardIssues]);
+  }, [profiles, realAddresses, realSubscriptions, realJobs, realYardIssues, techUserIds]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return allCustomers;

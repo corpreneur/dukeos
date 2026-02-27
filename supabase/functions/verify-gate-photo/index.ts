@@ -175,9 +175,9 @@ You MUST respond using the provided tool function.`,
       verification: result,
       alert_triggered: !result.latch_secure || !result.gate_detected,
     }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
-  } catch (e) {
+  } catch (e: any) {
     console.error("verify-gate-photo error:", e);
-    return new Response(JSON.stringify({ error: e.message }), {
+    return new Response(JSON.stringify({ error: e?.message ?? "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
