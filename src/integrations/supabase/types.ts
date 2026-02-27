@@ -165,6 +165,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          org_id: string | null
           scheduled_date: string
           started_at: string | null
           status: Database["public"]["Enums"]["job_status"]
@@ -178,6 +179,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          org_id?: string | null
           scheduled_date: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
@@ -191,6 +193,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          org_id?: string | null
           scheduled_date?: string
           started_at?: string | null
           status?: Database["public"]["Enums"]["job_status"]
@@ -204,6 +207,13 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "service_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "jobs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
           {
@@ -254,6 +264,101 @@ export type Database = {
         }
         Relationships: []
       }
+      offline_sync_queue: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          payload: Json
+          synced: boolean
+          synced_at: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          synced?: boolean
+          synced_at?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          payload?: Json
+          synced?: boolean
+          synced_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      org_members: {
+        Row: {
+          created_at: string
+          id: string
+          org_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          slug: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          slug: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          slug?: string
+          timezone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -280,6 +385,33 @@ export type Database = {
           id?: string
           phone?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
           user_id?: string
         }
         Relationships: []
@@ -324,6 +456,7 @@ export type Database = {
           label: string
           lat: number | null
           lng: number | null
+          org_id: string | null
           state: string
           street: string
           updated_at: string
@@ -338,6 +471,7 @@ export type Database = {
           label?: string
           lat?: number | null
           lng?: number | null
+          org_id?: string | null
           state?: string
           street: string
           updated_at?: string
@@ -352,12 +486,21 @@ export type Database = {
           label?: string
           lat?: number | null
           lng?: number | null
+          org_id?: string | null
           state?: string
           street?: string
           updated_at?: string
           zip?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "service_addresses_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscriptions: {
         Row: {
@@ -370,6 +513,7 @@ export type Database = {
           frequency: string
           id: string
           num_dogs: number
+          org_id: string | null
           plan: string
           price_cents: number
           started_at: string
@@ -385,6 +529,7 @@ export type Database = {
           frequency?: string
           id?: string
           num_dogs?: number
+          org_id?: string | null
           plan?: string
           price_cents?: number
           started_at?: string
@@ -400,6 +545,7 @@ export type Database = {
           frequency?: string
           id?: string
           num_dogs?: number
+          org_id?: string | null
           plan?: string
           price_cents?: number
           started_at?: string
@@ -411,6 +557,13 @@ export type Database = {
             columns: ["address_id"]
             isOneToOne: false
             referencedRelation: "service_addresses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
         ]

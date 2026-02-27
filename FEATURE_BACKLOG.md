@@ -1,6 +1,6 @@
 # DukeOS Feature Backlog & Sprint Roadmap
 
-**Version:** 0.9.3 (Sprint 2 Complete)
+**Version:** 1.0.0 (Sprint 3 Complete — minus Stripe)
 **Date:** February 27, 2026
 **Status:** Active Development
 
@@ -32,13 +32,26 @@
 
 ---
 
-## 🔮 Sprint 3: Platform Maturity (v1.0)
-**Goal:** Multi-tenant readiness and billing automation.
+## ✅ Sprint 3: Platform Maturity (v1.0) — COMPLETE (minus Stripe)
+**Goal:** Multi-tenant readiness, push notifications, and offline mode.
+
+| ID | Priority | Feature | Status |
+|---|---|---|---|
+| **ORG-01** | **P1** | **Multi-Tenant Org Support** | ✅ Done — `organizations` + `org_members` tables, `org_id` on jobs/subs/addresses, RLS isolation, admin Organization page |
+| **PUSH-01** | **P1** | **Mobile Push Notifications** | ✅ Done — Push API subscription hook, toggle in header, `push_subscriptions` table |
+| **OFF-01** | **P1** | **Offline Mode** | ✅ Done — localStorage queue, auto-sync on reconnect, offline Start/Complete job, OfflineIndicator badge |
+| **STRIPE** | **P0** | **Stripe Connect Integration** | ⏭ Skipped — Deferred per request |
+
+---
+
+## 🔮 Sprint 4: Growth & Polish
+**Goal:** Revenue automation, customer self-service, and analytics.
 
 - [ ] **Stripe Connect Integration:** Split payments between Platform (SaaS Fee) and OpCo (Service Fee).
-- [ ] **Multi-Tenant Org Support:** Ensure data isolation between different franchise owners.
-- [ ] **Mobile Push Notifications:** Replace in-app alerts with real Push API for technicians.
-- [ ] **Offline Mode:** Enable "Start/Stop Job" functionality without cell service.
+- [ ] **Customer Self-Service Portal:** Let customers pause/resume subscriptions, update payment, view receipts.
+- [ ] **Advanced Analytics Dashboard:** Revenue trends, churn prediction, technician utilization heatmaps.
+- [ ] **Automated Recurring Billing:** Auto-charge on subscription renewal dates.
+- [ ] **White-Label Branding:** Per-org custom logos, colors, and domain.
 
 ---
 
